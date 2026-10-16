@@ -1,4 +1,4 @@
-import type { Endpoint, Folder, ImportGrouping, ImportSource, KeyValue, Project, Resource } from '../workspace/types'
+import type { Endpoint, Environment, Folder, ImportGrouping, ImportSource, KeyValue, Project, Resource } from '../workspace/types'
 import type { ImportedOperation, ImportedSpec } from './convert'
 
 export type ImportMode = 'merge' | 'overwrite'
@@ -19,6 +19,11 @@ export interface PlanOptions {
   mode: ImportMode
   /** Remove this source's endpoints and schemas that are missing from the new document (Apidog: off by default). */
   deleteUnmatched?: boolean
+  /**
+   * Create (or update) one environment per document server, with the server as
+   * this source's service URL. The first becomes active if none is.
+   */
+  serversAsEnvironments?: boolean
   /** ISO timestamp, injected for deterministic tests. */
   now: string
 }
@@ -99,7 +104,8 @@ function specFields(operation: ImportedOperation, spec: ImportedSpec) {
     cookies: params(operation, 'cookie'),
     body: operation.body,
     responses: operation.responses,
-    security: operation.security ?? (spec.security.length ? spec.security : undefined)
+    security: operation.security ?? (spec.security.length ? spec.security : undefined),
+    servers: operation.servers
   }
 }
 
@@ -126,7 +132,8 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
     version: spec.version,
     specVersion: `${spec.kind === 'swagger2' ? 'Swagger' : 'OpenAPI'} ${spec.specVersion}`,
     grouping: options.grouping,
-    importedAt: options.now
+    importedAt: options.now,
+    servers: spec.servers.map(server => server.url)
   }
   const fromSource = <T extends { source?: { sourceId: string } }>(item: T) => item.source?.sourceId === sourceId
 
@@ -233,6 +240,25 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
       ? project.importSources.map(item => item.id === sourceId ? source : item)
       : [...project.importSources, source],
     importedSecuritySchemes: { ...project.importedSecuritySchemes, [sourceId]: spec.securitySchemes }
+  }
+  if (options.serversAsEnvironments && spec.servers.length) {
+    const environments = [...nextProject.environments]
+    const created: string[] = []
+    for (const server of spec.servers) {
+      const id = `env_${stableHash(`${sourceId}|${server.url}`)}`
+      const existing = environments.findIndex(environment => environment.id === id)
+      if (existing !== -1) {
+        environments[existing] = { ...environments[existing], serviceUrls: { ...environments[existing].serviceUrls, [sourceId]: server.url } }
+        continue
+      }
+      let name = server.description?.trim() || new URL(server.url).host
+      for (let index = 2; environments.some(environment => environment.name === name); index++) name = `${server.description?.trim() || new URL(server.url).host} ${index}`
+      const environment: Environment = { id, name, baseUrl: server.url, serviceUrls: { [sourceId]: server.url }, variables: [] }
+      environments.push(environment)
+      created.push(id)
+    }
+    nextProject.environments = environments
+    if (!nextProject.activeEnvironmentId && created.length) nextProject.activeEnvironmentId = created[0]
   }
   if (!Object.keys(spec.securitySchemes).length) delete nextProject.importedSecuritySchemes![sourceId]
 

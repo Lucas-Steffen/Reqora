@@ -147,8 +147,8 @@ describe('sending through the main-process runner (loopback only)', () => {
   it('reports unresolved variables, unreachable hosts and timeouts as data, never as thrown errors', async () => {
     const workspace = createDemoWorkspace()
     workspace.projects[0].activeEnvironmentId = null
-    const noBase = await run(workspace)
-    expect(noBase).toMatchObject({ ok: false, error: expect.stringContaining('is not a complete URL') })
+    const noBase = await run(workspace, 'get-users')
+    expect(noBase).toMatchObject({ ok: false, errorCode: 'INVALID_URL', error: expect.stringContaining('No environment selected and no server') })
     workspace.projects[0].endpoints[0].path = `${base}/slow/{{missing}}`
     const slow = await run(workspace, workspace.projects[0].endpoints[0].id, 200)
     expect(slow).toMatchObject({ ok: false, error: 'No response within 0.2 seconds.', unresolved: ['missing'] })

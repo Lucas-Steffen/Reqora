@@ -20,6 +20,8 @@ export interface PreparedRequest {
   /** Serialized body; form-data is sent as multipart by the HTTP layer. */
   body?: { kind: 'text'; text: string } | { kind: 'form-data'; fields: [string, string][] }
   unresolved: string[]
+  /** OpenAPI {name} placeholders left in the path (no value given). The request must not be sent. */
+  missingPathParams: string[]
 }
 
 export function draftFromEndpoint(endpoint: Endpoint): RequestDraft {
@@ -68,8 +70,13 @@ export function prepareRequest(draft: RequestDraft, scopes: ScopeValues, baseUrl
   let url = resolve(joinBaseUrl(baseUrl === undefined ? undefined : resolve(baseUrl), draft.url))
   // OpenAPI-style {param} path placeholders.
   for (const param of enabled(draft.pathParams)) {
-    url = url.split(`{${param.key}}`).join(encodeURIComponent(resolve(param.value)))
+    const value = resolve(param.value)
+    // An empty value or an unresolved {{variable}} would silently produce a different path
+    // (/pets/ or /pets/%7B%7Bid%7D%7D instead of /pets/{id}); leave it for the missing check.
+    if (value === '' || /\{\{[^{}]*\}\}/.test(value)) continue
+    url = url.split(`{${param.key}}`).join(encodeURIComponent(value))
   }
+  const missingPathParams = [...new Set([...url.split(/[?#]/)[0].matchAll(/(?<!\{)\{([^{}/]+)\}(?!\})/g)].map(match => match[1]))]
   const query = enabled(draft.query).map(row => [resolve(row.key), resolve(row.value)] as const)
   if (query.length) {
     const [beforeHash, hash] = url.split('#', 2)
@@ -101,5 +108,5 @@ export function prepareRequest(draft: RequestDraft, scopes: ScopeValues, baseUrl
       headers.push(['Content-Type', contentType])
     }
   }
-  return { method: draft.method, url, headers, body, unresolved: [...unresolved] }
+  return { method: draft.method, url, headers, body, unresolved: [...unresolved], missingPathParams }
 }

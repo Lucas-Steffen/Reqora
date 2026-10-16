@@ -72,6 +72,8 @@ export interface Endpoint {
   responses: ResponseSpec[]
   /** Raw OpenAPI security requirement names, kept for the authentication feature. */
   security?: string[][]
+  /** Operation- or path-level OpenAPI servers; override the source's servers. */
+  servers?: string[]
   source?: SourceLink
 }
 
@@ -98,6 +100,8 @@ export interface ImportSource {
   version?: string
   specVersion: string
   grouping: ImportGrouping
+  /** Absolute server URLs from the document (variables substituted with defaults). */
+  servers?: string[]
   importedAt: string
 }
 
@@ -124,6 +128,11 @@ export interface Environment {
   name: string
   /** Prepended to relative endpoint paths. May contain {{variables}}. */
   baseUrl: string
+  /**
+   * Base URL per import source (Apidog's per-service base URLs). Takes
+   * precedence over the source's own servers for that source's endpoints.
+   */
+  serviceUrls?: Record<string, string>
   variables: Variable[]
 }
 

@@ -1,6 +1,7 @@
 import { activeEnvironment, buildContext, redact } from '../environments/variables'
 import { activeProject, type Project, type Variable, type Workspace } from '../workspace/types'
 import { draftFromEndpoint, prepareRequest, type PreparedRequest, type RequestDraft } from './prepare'
+import { resolveBaseUrl } from './baseUrl'
 
 export interface HttpResponseView {
   status: number
@@ -25,6 +26,8 @@ export interface RunResult {
   request?: { method: string; url: string; headers: [string, string][]; body?: string }
   response?: HttpResponseView
   error?: string
+  /** Machine-readable failure class: DNS, REFUSED, RESET, TLS, TIMEOUT, INVALID_URL, NETWORK, MISSING_PATH_PARAM, ... */
+  errorCode?: string
   unresolved: string[]
 }
 
@@ -55,13 +58,20 @@ export async function runRequest(input: RunInput, deps: RunDependencies): Promis
   const secrets = await secretValues(project, deps.readSecret)
   const context = buildContext(project, variable => secrets.get(variable.id))
   const draft = input.draft ?? draftFromEndpoint(endpoint)
-  const prepared = prepareRequest(draft, context.scopes, activeEnvironment(project)?.baseUrl)
+  const base = resolveBaseUrl(project, endpoint, draft.url)
+  const prepared = prepareRequest(draft, context.scopes, base.baseUrl)
   const mask = (text: string) => redact(text, context.secretValues)
   const request = {
     method: prepared.method,
     url: mask(prepared.url),
     headers: prepared.headers.map(([name, value]) => [name, mask(value)] as [string, string]),
     body: bodyText(prepared) === undefined ? undefined : mask(bodyText(prepared)!)
+  }
+  if (prepared.missingPathParams.length) {
+    return { ok: false, request, error: `Fill in path parameter(s) before sending: ${prepared.missingPathParams.join(', ')}.`, errorCode: 'MISSING_PATH_PARAM', unresolved: prepared.unresolved }
+  }
+  if (base.origin === 'none') {
+    return { ok: false, request, error: `No base URL for "${prepared.url}". ${base.label}`, errorCode: 'INVALID_URL', unresolved: prepared.unresolved }
   }
   try {
     const response = await deps.send(prepared)
@@ -72,6 +82,12 @@ export async function runRequest(input: RunInput, deps: RunDependencies): Promis
       unresolved: prepared.unresolved
     }
   } catch (error) {
-    return { ok: false, request, error: mask(error instanceof Error ? error.message : 'The request failed.'), unresolved: prepared.unresolved }
+    const errorCode = (error as { code?: unknown })?.code
+    return {
+      ok: false, request,
+      error: mask(error instanceof Error ? error.message : 'The request failed.'),
+      ...(typeof errorCode === 'string' ? { errorCode } : {}),
+      unresolved: prepared.unresolved
+    }
   }
 }

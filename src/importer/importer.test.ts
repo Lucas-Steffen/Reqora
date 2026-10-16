@@ -62,7 +62,7 @@ describe('parsing and detection', () => {
 describe('OpenAPI 3 conversion', () => {
   it('normalizes metadata, servers, operations and schemas', async () => {
     const spec = await garden()
-    expect(spec).toMatchObject({ kind: 'openapi3', title: 'Garden Supply API', version: '1.4.0', servers: ['https://eu.garden.test/v1'] })
+    expect(spec).toMatchObject({ kind: 'openapi3', title: 'Garden Supply API', version: '1.4.0', servers: [{ url: 'https://eu.garden.test/v1' }] })
     expect(spec.operations.map(operation => `${operation.method} ${operation.path}`)).toEqual([
       'GET /plants', 'POST /plants', 'GET /plants/{plantId}', 'POST /store/orders', 'GET /health'
     ])
@@ -122,7 +122,7 @@ describe('OpenAPI 3 conversion', () => {
 describe('Swagger 2.0 conversion', () => {
   it('builds the server from host/basePath and converts body, form and examples', async () => {
     const spec = await importDocument(swagger2Json, 'https://library.test/swagger.json', loader)
-    expect(spec.servers).toEqual(['http://library.test/api'])
+    expect(spec.servers).toEqual([{ url: 'http://library.test/api' }])
     const [search, add, cover] = spec.operations
     expect(search.parameters[0]).toEqual({ name: 'q', in: 'query', required: false, description: 'string', example: 'dune' })
     expect(JSON.parse(search.responses[0].example!)).toEqual([{ id: 'string', title: 'Dune' }])

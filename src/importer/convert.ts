@@ -30,6 +30,8 @@ export interface ImportedOperation {
   responses: ResponseSpec[]
   /** Security requirement alternatives; each entry lists scheme names applied together. Undefined = inherit document default. */
   security?: string[][]
+  /** Operation- or path-level server URLs (OpenAPI 3), absolute. */
+  servers?: string[]
 }
 
 export interface ImportedSchema {
@@ -45,7 +47,7 @@ export interface ImportedSpec {
   title: string
   version?: string
   description?: string
-  servers: string[]
+  servers: ImportedServer[]
   tags: { name: string; description?: string }[]
   operations: ImportedOperation[]
   schemas: ImportedSchema[]
@@ -80,16 +82,31 @@ function securityList(value: Json): string[][] | undefined {
   return value.filter(isObj).map(requirement => Object.keys(requirement))
 }
 
-function serverUrls(kind: SpecKind, document: Obj): string[] {
-  if (kind === 'swagger2') {
-    const host = str(document.host)
-    const basePath = str(document.basePath) ?? ''
-    if (!host) return basePath && basePath !== '/' ? [basePath] : []
-    const schemes = Array.isArray(document.schemes) && document.schemes.length ? document.schemes : ['https']
-    return [`${schemes[0]}://${host}${basePath === '/' ? '' : basePath}`]
+export interface ImportedServer {
+  /** Absolute http(s) URL without a trailing slash. */
+  url: string
+  description?: string
+}
+
+/**
+ * Makes a server URL absolute. Relative URLs ("/api", "v2") are resolved
+ * against the document's own URL, as OpenAPI specifies; for local files
+ * there is nothing to resolve against, so they are dropped with a warning.
+ */
+function absoluteServer(url: string, documentUri: string, warnings: string[]): string | undefined {
+  try {
+    const absolute = new URL(url, /^https?:/i.test(documentUri) ? documentUri : undefined)
+    if (absolute.protocol !== 'http:' && absolute.protocol !== 'https:') return undefined
+    return absolute.toString().replace(/\/$/, '')
+  } catch {
+    warnings.push(`Server "${url}" is relative and the document is a local file; set a base URL in an environment to send requests.`)
+    return undefined
   }
-  if (!Array.isArray(document.servers)) return []
-  return document.servers.filter(isObj).flatMap(server => {
+}
+
+function serverList(value: Json, documentUri: string, warnings: string[]): ImportedServer[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(isObj).flatMap(server => {
     let url = str(server.url)
     if (!url) return []
     // Substitute server variables with their defaults.
@@ -99,8 +116,27 @@ function serverUrls(kind: SpecKind, document: Obj): string[] {
         if (fallback !== undefined) url = url.split(`{${name}}`).join(fallback)
       }
     }
-    return [url.replace(/\/$/, '')]
+    const absolute = absoluteServer(url, documentUri, warnings)
+    return absolute ? [{ url: absolute, description: str(server.description) }] : []
   })
+}
+
+function documentServers(kind: SpecKind, document: Obj, documentUri: string, warnings: string[]): ImportedServer[] {
+  if (kind === 'swagger2') {
+    const host = str(document.host)
+    const basePath = (str(document.basePath) ?? '').replace(/\/$/, '')
+    const schemes = Array.isArray(document.schemes) ? document.schemes.filter((item): item is string => typeof item === 'string') : []
+    if (host) return [{ url: `${schemes[0] ?? 'https'}://${host}${basePath}` }]
+    // Swagger 2.0: without "host", the host serving the document is used.
+    const absolute = absoluteServer(basePath || '/', documentUri, warnings)
+    return absolute ? [{ url: absolute }] : []
+  }
+  // OpenAPI 3: without "servers", the default server is "/" relative to the document.
+  if (!Array.isArray(document.servers) || !document.servers.length) {
+    const absolute = /^https?:/i.test(documentUri) ? absoluteServer('/', documentUri, warnings) : undefined
+    return absolute ? [{ url: absolute }] : []
+  }
+  return serverList(document.servers, documentUri, warnings)
 }
 
 /** Reads, dereferences and normalizes an OpenAPI 3.x or Swagger 2.0 document. */
@@ -118,6 +154,7 @@ export async function readSpec(document: Obj, options: ReadSpecOptions): Promise
   const globalConsumes = Array.isArray(document.consumes) ? document.consumes.filter((item): item is string => typeof item === 'string') : []
   const globalProduces = Array.isArray(document.produces) ? document.produces.filter((item): item is string => typeof item === 'string') : []
   const operations: ImportedOperation[] = []
+  const serverWarnings: string[] = []
 
   for (const [path, rawItem] of Object.entries(paths && isObj(paths.value) ? paths.value : {})) {
     if (!path.startsWith('/')) continue
@@ -129,7 +166,12 @@ export async function readSpec(document: Obj, options: ReadSpecOptions): Promise
       if (index === -1 || !isObj(rawOperation)) continue
       const operation = resolver.deref(rawOperation, item.uri) as Obj
       const inherited = resolver.deref(pathParameters, item.uri) as Json[]
-      operations.push(convertOperation(kind, HTTP_METHODS[index], path, operation, inherited, globalConsumes, globalProduces))
+      const converted = convertOperation(kind, HTTP_METHODS[index], path, operation, inherited, globalConsumes, globalProduces)
+      if (kind === 'openapi3') {
+        const own = serverList(Array.isArray(operation.servers) && operation.servers.length ? operation.servers : item.value.servers, uri, serverWarnings)
+        if (own.length) converted.servers = own.map(server => server.url)
+      }
+      operations.push(converted)
     }
   }
 
@@ -157,7 +199,7 @@ export async function readSpec(document: Obj, options: ReadSpecOptions): Promise
     title,
     version: str(info.version),
     description: str(info.description),
-    servers: serverUrls(kind, document),
+    servers: documentServers(kind, document, uri, serverWarnings),
     tags: Array.isArray(document.tags)
       ? document.tags.filter(isObj).flatMap(tag => str(tag.name) ? [{ name: str(tag.name)!, description: str(tag.description) }] : [])
       : [],
@@ -165,7 +207,7 @@ export async function readSpec(document: Obj, options: ReadSpecOptions): Promise
     schemas,
     securitySchemes,
     security: securityList(document.security) ?? [],
-    warnings: [...set.warnings, ...resolver.warnings]
+    warnings: [...new Set([...set.warnings, ...resolver.warnings, ...serverWarnings])]
   }
 }
 
