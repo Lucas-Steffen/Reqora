@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 
 /** The original search scenario, unchanged in intent. */
 export async function searchScenario({ application, page, capture, check }) {
+  const results = page.getByRole('listbox', { name: 'Search matches' })
   const evidence = 'docs/apidog-search/evidence/reqora-runtime'
   const search = page.getByRole('searchbox', { name: 'Search project', exact: true })
   await search.waitFor()
@@ -15,8 +16,8 @@ export async function searchScenario({ application, page, capture, check }) {
   await page.keyboard.press('Control+k')
   assert.equal(await search.evaluate(element => document.activeElement === element), true)
   await search.fill('users')
-  await page.getByRole('option').first().waitFor()
-  assert.equal(await page.getByRole('option').count(), 7)
+  await results.getByRole('option').first().waitFor()
+  assert.equal(await results.getByRole('option').count(), 7)
   await capture(evidence, 'reqora-search.png')
   check('Ctrl+K focuses search; users query returns 7 resources with real rendered results')
 
@@ -38,12 +39,12 @@ export async function searchScenario({ application, page, capture, check }) {
 
   await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Draft', exact: true }).check()
-  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
-  assert.equal(await page.getByRole('option').count(), 1)
+  await results.getByRole('option', { name: /Cancel order/ }).waitFor()
+  assert.equal(await results.getByRole('option').count(), 1)
   await capture(evidence, 'reqora-filters.png')
   await page.reload()
-  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
-  assert.equal(await page.getByRole('option').count(), 1)
+  await results.getByRole('option', { name: /Cancel order/ }).waitFor()
+  assert.equal(await results.getByRole('option').count(), 1)
   check('Blank-query metadata filtering finds the Draft endpoint and survives reload')
   await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
   await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
@@ -57,7 +58,7 @@ export async function searchScenario({ application, page, capture, check }) {
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1000, 720))
   await page.setViewportSize({ width: 1000, height: 720 })
   await search.fill('checkout')
-  await page.getByRole('option').first().waitFor()
+  await results.getByRole('option').first().waitFor()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   assert.equal(overflow, false)
   await capture(evidence, 'reqora-search-compact.png')

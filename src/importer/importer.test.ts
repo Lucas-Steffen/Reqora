@@ -245,7 +245,7 @@ describe('review regressions (import gate)', () => {
   })
 
   it('never echoes document text in JSON parse errors', () => {
-    expect(() => parseDocument('{"password": "hunter2", oops}')).toThrow(/^The document is not valid JSON \(character \d+\)\.$/)
+    expect(() => parseDocument('{"password": "hunter2" "x": [}')).toThrow(/^The document is not valid JSON \(character \d+\)\.$/)
   })
 
   it('keeps a tag named "Schemas" apart from the schemas folder', async () => {
@@ -274,8 +274,8 @@ describe('review regressions (import gate)', () => {
   })
 
   it('identifies sources by canonical identity, not just the displayed file name', async () => {
-    const a = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:\billing\openapi.yaml' })
-    const b = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:\users\openapi.yaml' })
+    const a = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:/billing/openapi.yaml' })
+    const b = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:/users/openapi.yaml' })
     const c = sourceIdFor({ kind: 'url', location: 'https://x.test/spec?…', identity: 'https://x.test/spec?service=a' })
     const d = sourceIdFor({ kind: 'url', location: 'https://x.test/spec?…', identity: 'https://x.test/spec?service=b' })
     expect(new Set([a, b, c, d]).size).toBe(4)

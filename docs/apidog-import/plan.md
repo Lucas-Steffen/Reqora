@@ -1,5 +1,7 @@
 # Plan — OpenAPI/Swagger import
 
+**Status: complete.** All steps done; gate passed (see [validation.md](validation.md)).
+
 1. **Specs:** verify the installed ASAR identity; trace import ingress, parser/converter, folder rules, external references, and update settings. Save exact original snippets/locations and distinguish inferences.
 2. **Build domain:** add serializable workspace/request/import models and pure JSON/YAML parsing, bounded reference resolution, conversion, and merge planning. Keep the search module unchanged.
 3. **Build desktop adapters:** bounded HTTP(S)/file loaders, scoped references, sender-validated named IPC methods, and atomic workspace persistence. Expose only typed preload methods.

@@ -1,24 +1,69 @@
-# Specs — OpenAPI/Swagger import
+# Specs: OpenAPI/Swagger import
 
 ## Observed Apidog basis
 
-Initial verified packaged-code observations: `dist/renderer/94743.05826374.async.js` detects Swagger/OpenAPI versions, invokes a Swagger conversion path, derives folder segments from the first operation tag, and contains external-reference loading; `97494` includes JSON-then-YAML parsing and version recognition. Exact bounded excerpts, hashes, and offsets are recorded in `evidence.md` and the evidence JSON. These static observations do not prove runtime execution. Requirements and choices below belong to Reqora.
+Static evidence is in [evidence.md](evidence.md). Cited facts are for Apidog 2.8.50; they are not runtime measurements.
 
-## Required behavior
+**Conversion** (chunk `94743`)
+- A document is recognized by a string `openapi` or `swagger` field. JSON is tried first, then YAML.
+- Swagger 2.0 is upgraded to OAS 3 before conversion.
 
-- Accept OpenAPI 3.x and Swagger 2.0 as JSON or YAML, through a native file picker, file drag/drop, or HTTP(S) URL.
-- Read/fetch in Electron main through named preload methods. No generic IPC, arbitrary filesystem read API, or Node integration in the renderer.
-- Bound each document to 5 MiB, timeout to 10 seconds including the response body, and redirects to five; cap an import's total reference documents and object traversal. Validate every redirected URL and report actionable errors without leaking credentials.
-- Resolve internal JSON-pointer references and external relative/absolute document references through an injected loader. Local references stay within the selected file's directory; HTTP sources cannot reference local files. Preserve recursive schema references with an explicit warning rather than expanding forever.
-- Map paths/operations into folders/endpoints. Offer tag grouping (first tag, including slash-separated hierarchy) or path grouping, preserving all operation tags as metadata. Preserve method, URL/base server, inherited parameters, headers, request-body examples, response schemas/examples, and security definitions separately from search records.
-- Preview title/version/source, endpoint/folder counts, additions/updates/removals, warnings, and endpoint rows before changing the project.
-- Merge updates stable method/path identities for that source and retains removed items. Overwrite replaces that source's imported resources only. Both preserve unrelated sources/manual records. Cancel leaves the workspace unchanged.
-- Persist the workspace through a replaceable repository and atomically save in main. A committed import immediately refreshes the tree, details, and pure renderer search; reload restores it.
+**Folders and names**
+- The folder is `x-apidog-folder` if present, otherwise the **first tag**. A slash in it creates nested folders. Untagged operations go to the root, and all tags are kept on the endpoint.
+- Names fall back in this order: `summary`, `operationId`, first line of `description`, path. The name is capped at 255 characters.
 
-## Acceptance checks
+**URL import and merging**
+- URL imports are fetched in the **renderer** with axios. The root request has no explicit timeout or redirect cap.
+- Re-import modes are overwrite (`methodAndPath`, the default), merge, ignore and keep both, matched by method and path.
+- `deleteUnmatchedResources` defaults to off.
+- Merging happens on Apidog's server.
 
-JSON/YAML × OpenAPI/Swagger fixtures; internal/external/escaped-pointer/recursive/unresolved references; tag/path hierarchy; server/basePath and parameter handling; deterministic re-import identities; merge/overwrite isolation; input errors and all transport limits; preview/cancel/commit/search/reload; actual Electron file picker/drop/URL flows against local fixtures and loopback servers only.
+**Security schemes**
+- `securitySchemes` are kept as reusable schemes.
 
-## Boundaries
+## Required behavior (Reqora)
 
-This feature imports request definitions; request execution, environment expansion, scripts, and authentication UI are implemented in their later ordered stages. Imported security metadata is retained now for feature 4. Remote reference downloads only occur as part of the user's explicit import action. Local directory escapes and unsupported URI schemes fail clearly.
+- **Formats.** Accept OpenAPI 3.x and Swagger 2.0 as JSON or YAML. Swagger 2.0 is normalized directly rather than upgraded to OAS 3, but produces the same endpoint model.
+- **Sources.** Native file picker, drag-and-drop anywhere on the window (or onto the dialog), and HTTP(S) URL.
+- **Where work happens.** Files are read and URLs fetched in **Electron main**, through named preload methods: `importer.pickFile`, `fromDroppedFile`, `fromUrl` and `cancel`. No generic IPC is exposed, and no Node runs in the renderer.
+  - *Deliberate difference:* Apidog fetches in the renderer.
+- **Limits.** Each document may be at most 5 MiB, with a 10 s timeout that includes the body, at most 5 redirects (each one re-validated), and no HTTPS→HTTP downgrade.
+  - The whole import has a single 30 s deadline and can be canceled.
+  - URLs containing credentials are rejected with a clear message.
+  - Error messages never echo document text or credentials.
+- **`$ref` resolution.** Internal JSON-pointer references (including `~0`/`~1` and percent-encoding) and external references are resolved.
+  - **Local files** may reference only files inside the selected file's folder. The containment check is lexical first, so UNC paths or `file:` URLs with a host never touch the network. It is checked again after `realpath` to catch symlinks. Remote references from local files are not fetched.
+  - **URL documents** may reference only the same origin.
+  - Recursive references are kept as `{ $ref, x-circular }` with a warning. Expansion is bounded per definition (truncated with a warning) and per import (1M objects, after which the import fails with a `LIMIT` error).
+  - YAML aliases are capped.
+- **Mapping.** Folders come from the first tag (with `/` nesting) or from the first path segment. Untagged operations go to the project root. Operations carry:
+  - every tag;
+  - method and path;
+  - inherited path-level parameters, overridden by operation parameters;
+  - query, header, path and cookie parameters;
+  - the request body (raw, form-urlencoded or multipart);
+  - response examples, or samples generated from the schema;
+  - `deprecated`, which sets the status to *Deprecated*;
+  - the security requirement.
+  - Component schemas become schema resources in a per-source *Schemas* folder.
+  - `securitySchemes` and the document-level `security` are stored for feature 4.
+- **Search.** Committing projects the workspace into `SearchRecord`s (`toSearchRecords`) and feeds them to the unchanged pure search module.
+- **Preview.** Before anything changes, the preview shows title, version, spec version, location, counts, warnings and per-endpoint rows (New, Updated, Unchanged, Kept or Removed), plus a grouping choice.
+- **Re-import.** A source is recognized by a hash of its canonical identity: the real path for files, and the full credential-free URL including the query for URLs. On re-import the user chooses:
+  - **Merge:** update spec fields of matched endpoints (method + path). Keep the ID and user-owned fields (status, maintainer, a folder the user moved the endpoint to, and later auth and scripts).
+  - **Overwrite:** replace matched endpoints with the document's version.
+  - **Remove endpoints no longer in the document:** a separate checkbox, off by default as in Apidog.
+  - In every mode, other sources and manual items are left untouched. Cancel changes nothing.
+- **Persistence.** The workspace is saved through `WorkspaceRepository`, an atomic temp-file-plus-rename JSON store in `userData`.
+  - Revisions are optimistic, and saves are serialized and coalesced.
+  - A corrupt file is kept aside.
+  - An unreadable file, for any reason other than ENOENT, fails the load instead of being replaced by the demo.
+
+## Out of scope
+
+Leaving these out was deliberate:
+- XML and Swagger 1.x
+- the GitHub and HTML landing-page heuristics
+- per-item checkboxes in the preview
+- the "ignore" and "keep both" modes
+- `x-apidog-folder` (inferred in the evidence, never seen literally)

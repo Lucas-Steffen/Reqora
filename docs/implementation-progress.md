@@ -4,8 +4,8 @@ Requested workflow: Specs → Plan → Build → Test → Review. Features advan
 
 | Order | Feature | Current stage | Evidence and stage records |
 | --- | --- | --- | --- |
-| 1 | OpenAPI/Swagger import | Specs and Plan; artifact investigation in progress | `apidog-import/` |
-| 2 | Multiple environments | Not started; gated on import | `apidog-environments/` |
+| 1 | OpenAPI/Swagger import | **Done** — tests, build, smoke and review passed | `apidog-import/` |
+| 2 | Multiple environments | Build in progress (evidence collected) | `apidog-environments/` |
 | 3 | Pre/post scripts | Not started; gated on environments | `apidog-scripts/` |
 | 4 | Authentication | Not started; gated on scripts | `apidog-auth/` |
 

@@ -19,6 +19,7 @@ export async function importScenario({ application, page, capture, check, server
   await writeFile(join(specDir, 'notes.txt'), 'not a spec')
 
   const dialog = page.getByRole('dialog', { name: 'Import OpenAPI / Swagger' })
+  const results = page.getByRole('listbox', { name: 'Search matches' })
   const openImport = () => page.getByRole('button', { name: 'Import OpenAPI / Swagger', exact: true }).click()
 
   // 1. Native file picker, stubbed only at the OS-dialog boundary.
@@ -37,8 +38,8 @@ export async function importScenario({ application, page, capture, check, server
 
   const search = page.getByRole('searchbox', { name: 'Search project', exact: true })
   await search.fill('/plants/pl_9')
-  await page.getByRole('option', { name: /Get plant/ }).waitFor()
-  assert.equal(await page.getByRole('option').count(), 1)
+  await results.getByRole('option', { name: /Get plant/ }).waitFor()
+  assert.equal(await results.getByRole('option').count(), 1)
   await search.fill('')
   check('Imported endpoint is found by the existing search with a concrete parameterized path')
 

@@ -4,7 +4,7 @@
   "outcome": "passed",
   "checks": [
     "Actual built Electron app loads its renderer and synthetic workspace",
-    "Renderer has no Node require/process globals; preload exposes only window.reqora {importer, workspace}",
+    "Renderer has no Node require/process globals; preload exposes only window.reqora {importer, request, secrets, workspace}",
     "Ctrl+K focuses search; users query returns 7 resources with real rendered results",
     "Concrete parameterized path returns two endpoints; arrow/Enter opens selected detail",
     "Escape clears search and the committed query appears in recent history",
