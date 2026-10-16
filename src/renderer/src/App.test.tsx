@@ -33,7 +33,7 @@ describe("Project search workspace", () => {
     await user.keyboard("{Control>}k{/Control}");
     expect(searchbox()).toHaveFocus();
     await user.type(searchbox(), "/v1/users/42");
-    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(2));
+    await waitFor(() => expect(results().getAllByRole("option")).toHaveLength(2));
     await user.keyboard("{ArrowDown}{Enter}");
     expect(
       selectedResource().getByRole("heading", { name: "Update user" }),
@@ -58,7 +58,7 @@ describe("Project search workspace", () => {
     await user.click(folder);
     expect(folder).toHaveAttribute("aria-expanded", "false");
     await user.type(searchbox(), "create-order");
-    const match = await screen.findByRole("option");
+    const match = await results().findByRole("option");
     await user.click(match);
     expect(folder).toHaveAttribute("aria-expanded", "true");
     expect(
@@ -74,8 +74,8 @@ describe("Project search workspace", () => {
       screen.getByRole("button", { name: "Choose search fields" }),
     );
     await user.click(screen.getByRole("checkbox", { name: "Draft" }));
-    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(1));
-    expect(screen.getByRole("option")).toHaveTextContent("Cancel order");
+    await waitFor(() => expect(results().getAllByRole("option")).toHaveLength(1));
+    expect(results().getByRole("option")).toHaveTextContent("Cancel order");
     expect(searchbox()).toHaveValue("");
     await user.click(screen.getByRole("checkbox", { name: "commerce" }));
     await user.click(
@@ -87,12 +87,12 @@ describe("Project search workspace", () => {
     await user.click(screen.getByRole("button", { name: "Reset filters" }));
     await user.click(screen.getByRole("checkbox", { name: "Alex Morgan" }));
     await waitFor(() =>
-      expect(screen.getAllByRole("option").length).toBeGreaterThan(0),
+      expect(results().getAllByRole("option").length).toBeGreaterThan(0),
     );
     const expected = demoRecords.filter(
       (record) => record.maintainer === "Alex Morgan",
     ).length;
-    expect(screen.getAllByRole("option")).toHaveLength(expected);
+    expect(results().getAllByRole("option")).toHaveLength(expected);
   });
 
   it("restores validated search fields and metadata preferences after remount", async () => {
@@ -151,7 +151,7 @@ describe("Project search workspace", () => {
     expect(JSON.parse(localStorage.getItem(HISTORY_KEY)!)).toEqual([]);
     fireEvent.compositionEnd(searchbox());
     await waitFor(() => expect(search).toHaveBeenCalledTimes(1));
-    await screen.findAllByRole("option");
+    await results().findAllByRole("option");
   });
 
   it("keeps the latest result when an earlier asynchronous request completes late", async () => {
@@ -182,16 +182,16 @@ describe("Project search workspace", () => {
     fireEvent.change(searchbox(), { target: { value: "old" } });
     await waitFor(() => expect(repository.search).toHaveBeenCalledTimes(1));
     fireEvent.change(searchbox(), { target: { value: "new" } });
-    await screen.findByRole("option", { name: /Current response/ });
+    await results().findByRole("option", { name: /Current response/ });
     await act(async () => {
       resolveOld([{ record: stale, matches: [], ancestors: [] }]);
       await Promise.resolve();
     });
     expect(
-      screen.queryByRole("option", { name: /Old response/ }),
+      results().queryByRole("option", { name: /Old response/ }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("option", { name: /Current response/ }),
+      results().getByRole("option", { name: /Current response/ }),
     ).toBeVisible();
   });
 
@@ -208,7 +208,7 @@ describe("Project search workspace", () => {
     ];
     render(<App repository={createMemorySearchRepository(records)} />);
     fireEvent.change(searchbox(), { target: { value: "second" } });
-    const option = await screen.findByRole("option");
+    const option = await results().findByRole("option");
     expect(option.querySelector("mark")).toHaveTextContent("second");
     expect(option).toHaveTextContent(markup);
     expect(document.querySelector("img")).not.toBeInTheDocument();
@@ -239,7 +239,7 @@ describe("Project search workspace", () => {
       results().queryByRole("button", { name: "users" }),
     ).not.toBeInTheDocument();
     await user.type(searchbox(), "users");
-    await screen.findAllByRole("option");
+    await results().findAllByRole("option");
     await user.keyboard("{Enter}");
     expect(
       selectedResource().getByRole("heading", { name: "Users" }),

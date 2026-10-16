@@ -26,7 +26,9 @@ export function parseDocument(text: string): Record<string, unknown> {
       value = parseYaml(source, { maxAliasCount: 100, uniqueKeys: false, merge: true })
     } catch (yamlError) {
       if (looksLikeJson && jsonError instanceof SyntaxError) {
-        throw new ImportError('PARSE', `The document is not valid JSON: ${jsonError.message}`)
+        // V8 messages can quote document text; report only the position.
+        const position = /position (\d+)/.exec(jsonError.message)?.[1]
+        throw new ImportError('PARSE', `The document is not valid JSON${position ? ` (character ${Number(position) + 1})` : ''}.`)
       }
       const where = yamlError instanceof YAMLParseError && yamlError.linePos
         ? ` (line ${yamlError.linePos[0].line}, column ${yamlError.linePos[0].col})`

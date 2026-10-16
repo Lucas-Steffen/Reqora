@@ -107,7 +107,7 @@ function serverUrls(kind: SpecKind, document: Obj): string[] {
 export async function readSpec(document: Obj, options: ReadSpecOptions): Promise<ImportedSpec> {
   const { kind, version: specVersion } = detectSpec(document)
   const set = await loadDocumentSet(options.uri, document, options.loader, options.limits ?? DEFAULT_REF_LIMITS)
-  const resolver = new RefResolver(set)
+  const resolver = new RefResolver(set, options.limits?.maxExpandedNodes)
   const uri = options.uri
   const info = isObj(document.info) ? document.info : {}
   const title = str(info.title) ?? 'Imported API'

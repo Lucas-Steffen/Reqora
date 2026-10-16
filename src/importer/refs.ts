@@ -9,9 +9,17 @@ export interface RefLimits {
   maxDocuments: number
   /** Maximum objects/arrays visited while scanning for references. */
   maxNodes: number
+  /** Maximum objects produced by all dereferencing in one import (bounds exponential fan-out). */
+  maxExpandedNodes?: number
 }
 
-export const DEFAULT_REF_LIMITS: RefLimits = { maxDocuments: 25, maxNodes: 250_000 }
+export const DEFAULT_REF_LIMITS: RefLimits = { maxDocuments: 25, maxNodes: 250_000, maxExpandedNodes: 1_000_000 }
+
+/** A $ref string safe to show: user info, query and very long values are removed. */
+export function displayRef(ref: string): string {
+  const cleaned = ref.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@#?]*@/i, '$1').replace(/\?[^#]*/, '')
+  return cleaned.length > 120 ? `${cleaned.slice(0, 117)}…` : cleaned
+}
 
 export interface DocumentSet {
   rootUri: string
@@ -131,8 +139,22 @@ export interface Located<T = Json> {
 /** Synchronous resolver over a preloaded document set. */
 export class RefResolver {
   readonly warnings = new Set<string>()
+  private expansionBudget: number
+  private readonly splitCache = new Map<string, { uri: string; pointer: string }>()
 
-  constructor(private readonly set: DocumentSet) {}
+  constructor(private readonly set: DocumentSet, maxExpandedNodes = DEFAULT_REF_LIMITS.maxExpandedNodes!) {
+    this.expansionBudget = maxExpandedNodes
+  }
+
+  private split(ref: string, base: string): { uri: string; pointer: string } {
+    const cacheKey = `${base}\n${ref}`
+    let result = this.splitCache.get(cacheKey)
+    if (!result) {
+      result = splitRef(ref, base)
+      this.splitCache.set(cacheKey, result)
+    }
+    return result
+  }
 
   get rootUri(): string {
     return this.set.rootUri
@@ -149,21 +171,21 @@ export class RefResolver {
     while (isObject(current.value) && typeof current.value.$ref === 'string') {
       const ref = current.value.$ref
       let target: { uri: string; pointer: string }
-      try { target = splitRef(ref, current.uri) } catch { this.warnings.add(`Reference "${ref}" is not a valid URI.`); return undefined }
+      try { target = this.split(ref, current.uri) } catch { this.warnings.add(`Reference "${displayRef(ref)}" is not a valid URI.`); return undefined }
       const key = `${target.uri}#${target.pointer}`
       if (seen.has(key)) {
-        this.warnings.add(`Reference "${ref}" points to itself and was left unresolved.`)
+        this.warnings.add(`Reference "${displayRef(ref)}" points to itself and was left unresolved.`)
         return undefined
       }
       seen.add(key)
       const document = this.set.documents.get(target.uri)
       if (document === undefined) {
-        this.warnings.add(`Reference "${ref}" could not be resolved (document not loaded).`)
+        this.warnings.add(`Reference "${displayRef(ref)}" could not be resolved (document not loaded).`)
         return undefined
       }
       const value = readPointer(document, target.pointer)
       if (value === undefined) {
-        this.warnings.add(`Reference "${ref}" could not be resolved in ${displayUri(target.uri)}.`)
+        this.warnings.add(`Reference "${displayRef(ref)}" could not be resolved in ${displayUri(target.uri)}.`)
         return undefined
       }
       current = { value, uri: target.uri }
@@ -180,6 +202,9 @@ export class RefResolver {
     let budget = maxNodes
     const walk = (value: Json, base: string, stack: string[], depth: number): Json => {
       if (!value || typeof value !== 'object') return value
+      if (--this.expansionBudget < 0) {
+        throw new ImportError('LIMIT', "The document's references expand to too many objects to import safely.")
+      }
       if (depth > maxDepth || --budget < 0) {
         this.warnings.add('A deeply nested or very large definition was truncated.')
         return {}
@@ -189,14 +214,14 @@ export class RefResolver {
       if (typeof record.$ref === 'string') {
         let key: string
         try {
-          const target = splitRef(record.$ref, base)
+          const target = this.split(record.$ref, base)
           key = `${target.uri}#${target.pointer}`
         } catch {
-          this.warnings.add(`Reference "${record.$ref}" is not a valid URI.`)
+          this.warnings.add(`Reference "${displayRef(record.$ref)}" is not a valid URI.`)
           return { $ref: record.$ref }
         }
         if (stack.includes(key)) {
-          this.warnings.add(`Recursive reference "${record.$ref}" was kept as a reference.`)
+          this.warnings.add(`Recursive reference "${displayRef(record.$ref)}" was kept as a reference.`)
           return { $ref: record.$ref, 'x-circular': true }
         }
         const resolved = this.resolve(value, base)

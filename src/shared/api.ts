@@ -27,6 +27,8 @@ export interface ReqoraApi {
     /** A file dropped onto the window. The preload resolves its path; contents are read in main. */
     fromDroppedFile(file: File): Promise<ImportOutcome>
     fromUrl(url: string): Promise<ImportOutcome>
+    /** Aborts the import in progress, if any. */
+    cancel?(): Promise<void>
   }
   request: {
     /** Resolves variables (including decrypted secrets) and sends from the main process. */
@@ -44,6 +46,7 @@ export const IPC = {
   importPick: 'reqora:import:pick-file',
   importPath: 'reqora:import:dropped-file',
   importUrl: 'reqora:import:url',
+  importCancel: 'reqora:import:cancel',
   requestSend: 'reqora:request:send',
   secretReveal: 'reqora:secret:reveal'
 } as const

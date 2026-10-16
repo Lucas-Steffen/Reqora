@@ -37,7 +37,8 @@ export interface RunDependencies {
 
 async function secretValues(project: Project, readSecret: RunDependencies['readSecret']): Promise<Map<string, string>> {
   const variables = [...(activeEnvironment(project)?.variables ?? []), ...project.globals].filter(variable => variable.enabled && variable.secret)
-  const entries = await Promise.all(variables.map(async variable => [variable.id, await readSecret(variable)] as const))
+  // A secret that cannot be decrypted resolves to nothing and is reported as unresolved.
+  const entries = await Promise.all(variables.map(async variable => [variable.id, await readSecret(variable).catch(() => undefined)] as const))
   return new Map(entries.filter((entry): entry is readonly [string, string] => entry[1] !== undefined))
 }
 

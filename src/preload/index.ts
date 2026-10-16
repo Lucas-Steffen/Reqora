@@ -18,7 +18,8 @@ const api: ReqoraApi = {
       if (!path) return Promise.resolve({ ok: false, error: { code: 'FILE', message: 'Only files from your computer can be dropped here.' } })
       return ipcRenderer.invoke(IPC.importPath, path)
     },
-    fromUrl: url => ipcRenderer.invoke(IPC.importUrl, url)
+    fromUrl: url => ipcRenderer.invoke(IPC.importUrl, url),
+    cancel: () => ipcRenderer.invoke(IPC.importCancel)
   },
   request: {
     send: input => ipcRenderer.invoke(IPC.requestSend, input)

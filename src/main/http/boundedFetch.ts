@@ -22,6 +22,9 @@ export function parseHttpUrl(value: string): URL {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new ImportError('UNSUPPORTED_SCHEME', `Only http:// and https:// URLs can be imported (got ${url.protocol}).`)
   }
+  if (url.username || url.password) {
+    throw new ImportError('INVALID_URL', 'URLs with a user name or password (user:pass@host) are not supported. Remove the credentials from the URL.')
+  }
   return url
 }
 

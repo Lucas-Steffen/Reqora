@@ -52,6 +52,12 @@ import {
 } from "./preferences";
 import MetadataFilters from "./MetadataFilters";
 import ImportDialog from "./ImportDialog";
+import EnvironmentManager from "./EnvironmentManager";
+import RequestPanel from "./RequestPanel";
+import { defaultRequestGateway, type RequestGateway } from "./requestGateway";
+import { activeEnvironment } from "../../environments/variables";
+import { setActiveEnvironment } from "../../environments/operations";
+import type { Project } from "../../workspace/types";
 import { defaultImportGateway, type ImportGateway } from "./importGateway";
 import { defaultWorkspaceRepository, useWorkspace } from "./workspaceClient";
 import type { WorkspaceRepository } from "../../workspace/repository";
@@ -133,18 +139,26 @@ interface AppProps {
   repository?: SearchRepository;
   workspaceRepository?: WorkspaceRepository;
   importGateway?: ImportGateway;
+  requestGateway?: RequestGateway;
 }
 
 export default function App({
   repository: searchOverride,
   workspaceRepository,
   importGateway,
+  requestGateway,
 }: AppProps): ReactNode {
   const [workspaceStore] = useState(
     () => workspaceRepository ?? defaultWorkspaceRepository(),
   );
   const [gateway] = useState(() => importGateway ?? defaultImportGateway());
   const workspaceState = useWorkspace(workspaceStore);
+  const latestWorkspace = useRef(workspaceState.workspace);
+  latestWorkspace.current = workspaceState.workspace;
+  const [requests] = useState(
+    () => requestGateway ?? defaultRequestGateway(() => latestWorkspace.current),
+  );
+  const [environmentsOpen, setEnvironmentsOpen] = useState(false);
   const project = workspaceState.workspace
     ? activeProject(workspaceState.workspace)
     : null;
@@ -164,7 +178,7 @@ export default function App({
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "example">(
+  const [activeTab, setActiveTab] = useState<"overview" | "example" | "request">(
     "overview",
   );
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -184,6 +198,10 @@ export default function App({
   const apiCount = records.filter((record) => record.kind === "api").length;
   const fieldCount = options.fields.length;
   const rootRecord = records.find((record) => !record.parentId);
+  const selectedEndpoint =
+    selected?.kind === "api"
+      ? project?.endpoints.find((endpoint) => endpoint.id === selected.id)
+      : undefined;
   const childrenOf = useMemo(() => {
     const map = new Map<string, SearchRecord[]>();
     for (const record of records) {
@@ -294,7 +312,9 @@ export default function App({
   }
   function openRecord(record: SearchRecord): void {
     setSelectedId(record.id);
-    setActiveTab("overview");
+    setActiveTab((tab) =>
+      tab === "request" && record.kind === "api" ? "request" : "overview",
+    );
     setCollapsed((previous) =>
       previous.filter((id) => !findAncestors(record).includes(id)),
     );
@@ -375,6 +395,11 @@ export default function App({
           ].map((child) => renderTreeItem(child, depth + 1))}
       </div>
     );
+  }
+  function updateProject(change: (project: Project) => Project): Promise<unknown> {
+    return workspaceState
+      .update((workspace) => replaceProject(workspace, change(activeProject(workspace))))
+      .catch(() => undefined);
   }
   async function commitImport(next: typeof project, summary: string): Promise<void> {
     if (!next) return;
@@ -508,6 +533,38 @@ export default function App({
             <ChevronRight size={13} />
             <strong>Search</strong>
           </div>
+          {project && (
+            <div className="environment-switcher">
+              <label className="sr-only" htmlFor="active-environment">
+                Active environment
+              </label>
+              <select
+                id="active-environment"
+                className="inline-select"
+                value={project.activeEnvironmentId ?? ""}
+                onChange={(event) =>
+                  void updateProject((current) =>
+                    setActiveEnvironment(current, event.target.value || null),
+                  )
+                }
+              >
+                <option value="">No environment</option>
+                {project.environments.map((environment) => (
+                  <option key={environment.id} value={environment.id}>
+                    {environment.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="icon-button"
+                title="Manage environments"
+                aria-label="Manage environments"
+                onClick={() => setEnvironmentsOpen(true)}
+              >
+                <Settings2 size={15} />
+              </button>
+            </div>
+          )}
           <span className="prototype-badge">
             <span /> LOCAL PROTOTYPE
           </span>
@@ -986,15 +1043,53 @@ export default function App({
                     >
                       {selected.kind === "doc" ? "Content" : "Example"}
                     </button>
+                    {selectedEndpoint && (
+                      <button
+                        id="request-tab"
+                        role="tab"
+                        aria-selected={activeTab === "request"}
+                        aria-controls="resource-tabpanel"
+                        onClick={() => setActiveTab("request")}
+                      >
+                        Request
+                      </button>
+                    )}
                   </div>
                   <div
                     id="resource-tabpanel"
                     role="tabpanel"
-                    aria-labelledby={
-                      activeTab === "overview" ? "overview-tab" : "example-tab"
-                    }
+                    aria-labelledby={`${activeTab}-tab`}
                   >
-                    {activeTab === "overview" ? (
+                    {activeTab === "request" && selectedEndpoint && project ? (
+                      <RequestPanel
+                        endpoint={selectedEndpoint}
+                        baseUrl={activeEnvironment(project)?.baseUrl}
+                        environmentName={activeEnvironment(project)?.name}
+                        send={async (draft) => {
+                          await workspaceState.flush();
+                          return requests.send({ endpointId: selectedEndpoint.id, draft });
+                        }}
+                        save={async (draft) => {
+                          await updateProject((current) => ({
+                            ...current,
+                            endpoints: current.endpoints.map((endpoint) =>
+                              endpoint.id === selectedEndpoint.id
+                                ? {
+                                    ...endpoint,
+                                    method: draft.method,
+                                    path: draft.url,
+                                    query: draft.query,
+                                    headers: draft.headers,
+                                    pathParams: draft.pathParams,
+                                    cookies: draft.cookies,
+                                    body: draft.body,
+                                  }
+                                : endpoint,
+                            ),
+                          }));
+                        }}
+                      />
+                    ) : activeTab === "overview" ? (
                       <>
                         <div className="detail-section-heading">
                           RESOURCE DETAILS
@@ -1106,6 +1201,14 @@ export default function App({
           </span>
         </footer>
       </main>
+      {environmentsOpen && project && (
+        <EnvironmentManager
+          project={project}
+          reveal={requests.reveal}
+          onClose={() => setEnvironmentsOpen(false)}
+          onChange={(next) => void updateProject(() => next)}
+        />
+      )}
       {importOpen && project && (
         <ImportDialog
           project={project}

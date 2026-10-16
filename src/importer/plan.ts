@@ -5,8 +5,13 @@ export type ImportMode = 'merge' | 'overwrite'
 
 export interface ImportOrigin {
   kind: ImportSource['kind']
-  /** Credential-free URL or bare file name. */
+  /** Credential-free URL or bare file name, for display. */
   location: string
+  /**
+   * Canonical identity used to recognize re-imports: the real file path or the
+   * full URL (including query). Only its hash is stored. Defaults to location.
+   */
+  identity?: string
 }
 
 export interface PlanOptions {
@@ -39,18 +44,22 @@ export interface ImportPlan {
   project: Project
 }
 
-/** 32-bit FNV-1a, base36. Deterministic IDs make re-imports match the same items. */
-export function stableHash(value: string): string {
-  let hash = 0x811c9dc5
+function fnv1a(value: string, seed: number): number {
+  let hash = seed
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i)
     hash = Math.imul(hash, 0x01000193)
   }
-  return (hash >>> 0).toString(36).padStart(7, '0')
+  return hash >>> 0
+}
+
+/** 64 bits (two seeded FNV-1a halves), base36. Deterministic IDs make re-imports match the same items. */
+export function stableHash(value: string): string {
+  return fnv1a(value, 0x811c9dc5).toString(36).padStart(7, '0') + fnv1a(value, 0x5bd1e995).toString(36).padStart(7, '0')
 }
 
 export function sourceIdFor(origin: ImportOrigin): string {
-  return `src_${stableHash(`${origin.kind}:${origin.location.toLowerCase()}`)}`
+  return `src_${stableHash(`${origin.kind}:${origin.identity ?? origin.location}`)}`
 }
 
 function folderSegments(operation: ImportedOperation, grouping: ImportGrouping): string[] {
@@ -78,7 +87,7 @@ function params(operation: ImportedOperation, location: 'query' | 'header' | 'pa
 function specFields(operation: ImportedOperation, spec: ImportedSpec) {
   return {
     // Apidog's default order: summary, operationId, first description line, path; capped at 255.
-    name: (operation.summary ?? operation.operationId ?? operation.description?.split('\n')[0].trim() ?? operation.path).slice(0, 255),
+    name: (operation.summary ?? operation.operationId ?? operation.description?.split('\n').map(line => line.trim()).find(Boolean) ?? operation.path).slice(0, 255),
     method: operation.method,
     path: operation.path,
     description: operation.description,
@@ -124,10 +133,11 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
   // Folders for the new document.
   const tagDescriptions = new Map(spec.tags.map(tag => [tag.name, tag.description]))
   const newFolders = new Map<string, Folder>()
-  const folderIdFor = (segments: string[]): string | undefined => {
+  const folderLabels = new Map<string, string>()
+  const folderIdFor = (segments: string[], prefix = 'folder'): string | undefined => {
     let parentId: string | undefined
     for (let depth = 0; depth < segments.length; depth++) {
-      const key = `folder:${segments.slice(0, depth + 1).join('/')}`
+      const key = `${prefix}:${segments.slice(0, depth + 1).join('/')}`
       const id = `fld_${stableHash(`${sourceId}|${key}`)}`
       if (!newFolders.has(key)) {
         newFolders.set(key, {
@@ -148,7 +158,7 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
   const rows: PlanRow[] = []
   const nextSourceEndpoints: Endpoint[] = []
   const seenKeys = new Set<string>()
-  const folderLabels = new Map<string, string>()
+  const sourceFolderIds = new Set(project.folders.filter(fromSource).map(folder => folder.id))
   const folderName = (folderId?: string) => (folderId && folderLabels.get(folderId)) || 'Project root'
 
   for (const operation of spec.operations) {
@@ -159,13 +169,20 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
     const fields = specFields(operation, spec)
     const existing = existingByKey.get(key)
     const id = existing?.id ?? `ep_${stableHash(`${sourceId}|${key}`)}`
+    // Merge keeps a user's placement in a folder that isn't one of this source's spec folders.
+    const keptFolder = options.mode === 'merge' && !!existing && existing.folderId !== undefined && !sourceFolderIds.has(existing.folderId)
     const endpoint: Endpoint = options.mode === 'merge' && existing
-      ? { ...existing, ...fields, folderId, source: { sourceId, key } }
+      ? {
+          ...existing, ...fields,
+          folderId: keptFolder ? existing.folderId : folderId,
+          status: existing.status ?? (operation.deprecated ? 'Deprecated' : undefined),
+          source: { sourceId, key }
+        }
       : { id, folderId, ...fields, ...(operation.deprecated ? { status: 'Deprecated' } : {}), source: { sourceId, key } }
     const cleaned = Object.fromEntries(Object.entries(endpoint).filter(([, value]) => value !== undefined)) as unknown as Endpoint
     nextSourceEndpoints.push(cleaned)
     const change: PlanRow['change'] = !existing ? 'added' : sameJson(stripSource(existing), stripSource(cleaned)) ? 'unchanged' : 'updated'
-    rows.push({ id, method: operation.method, path: operation.path, name: cleaned.name, folder: folderName(folderId), change })
+    rows.push({ id, method: operation.method, path: operation.path, name: cleaned.name, folder: keptFolder ? '(your folder)' : folderName(folderId), change })
   }
 
   const missing = [...existingByKey.values()].filter(endpoint => !seenKeys.has(endpoint.source!.key))
@@ -174,7 +191,8 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
   }
 
   // Schemas live in a "Schemas" folder for the source.
-  const schemaFolder = spec.schemas.length ? folderIdFor(['Schemas']) : undefined
+  // A distinct key prefix keeps it apart from a tag that happens to be named "Schemas".
+  const schemaFolder = spec.schemas.length ? folderIdFor(['Schemas'], 'schemas') : undefined
   const nextSourceResources: Resource[] = spec.schemas.map(schema => ({
     id: `sch_${stableHash(`${sourceId}|schema:${schema.name}`)}`,
     kind: 'schema',

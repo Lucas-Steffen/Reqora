@@ -56,7 +56,8 @@ export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealS
     }
     const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
-    return importer.fromPath(result.filePaths[0])
+    // Paths from the OS dialog are trusted, including network shares the user picked.
+    return importer.fromPath(result.filePaths[0], { allowNetworkPath: true })
   })
   handle(IPC.importPath, (_event, path) => {
     if (typeof path !== 'string' || !path || path.length > 4096) {
@@ -72,6 +73,7 @@ export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealS
     return runRequest({ endpointId: candidate.endpointId, draft: candidate.draft })
   })
   handle(IPC.secretReveal, (_event, variableId) => typeof variableId === 'string' && variableId.length < 200 ? revealSecret(variableId) : null)
+  handle(IPC.importCancel, () => importer.cancel())
   handle(IPC.importUrl, (_event, url) => {
     if (typeof url !== 'string' || url.length > 8192) {
       return { ok: false, error: { code: 'INVALID_URL', message: 'Enter a valid URL.' } } satisfies ImportOutcome

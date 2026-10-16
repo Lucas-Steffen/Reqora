@@ -22,6 +22,7 @@ function gateway(overrides: Partial<ImportGateway> = {}): ImportGateway {
   }
 }
 
+const results = () => within(screen.getByRole('region', { name: 'Project search results' }))
 const dialog = () => within(screen.getByRole('dialog', { name: 'Import OpenAPI / Swagger' }))
 
 describe('OpenAPI import workflow', () => {
@@ -43,8 +44,8 @@ describe('OpenAPI import workflow', () => {
     expect(await screen.findByText('Imported 5 endpoints from Garden Supply API.')).toBeVisible()
     expect(await screen.findByRole('button', { name: 'Plants' })).toBeVisible()
     await user.type(screen.getByRole('searchbox', { name: 'Search project' }), '/plants/pl_9')
-    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1))
-    expect(screen.getByRole('option')).toHaveTextContent('Get plant')
+    await waitFor(() => expect(results().getAllByRole('option')).toHaveLength(1))
+    expect(results().getByRole('option')).toHaveTextContent('Get plant')
     const saved = await repository.load()
     expect(saved.revision).toBe(1)
     expect(saved.projects[0].importSources[0]).toMatchObject({ location: 'garden.yaml', title: 'Garden Supply API' })

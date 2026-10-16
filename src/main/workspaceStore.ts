@@ -29,7 +29,10 @@ export function createFileWorkspaceStore(directory: string, hooks: StoreHooks = 
     let text: string
     try {
       text = await readFile(file, 'utf8')
-    } catch {
+    } catch (error) {
+      // Only a missing file means "first run". Any other error (locks, permissions) must not
+      // lead to the demo being saved over the user's data, so loading fails instead.
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error('The workspace file could not be read. Close other programs using it and restart Reqora.')
       current = createDemoWorkspace()
       return current
     }
