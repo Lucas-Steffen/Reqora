@@ -61,6 +61,8 @@ export interface Endpoint {
   tags: string[]
   status?: string
   maintainer?: string
+  creator?: string
+  latestEditor?: string
   operationId?: string
   query: KeyValue[]
   headers: KeyValue[]

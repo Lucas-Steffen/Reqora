@@ -1,8 +1,23 @@
 import { app, BrowserWindow, session } from "electron";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createImportService } from "./importService";
+import { registerIpc } from "./ipc";
+import { createFileWorkspaceStore } from "./workspaceStore";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
+const rendererFile = join(directory, "../renderer/index.html");
+const rendererUrl = !app.isPackaged ? process.env.ELECTRON_RENDERER_URL : undefined;
+
+function isTrustedUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (rendererUrl) return parsed.origin === new URL(rendererUrl).origin;
+    return parsed.protocol === "file:" && fileURLToPath(parsed) === rendererFile;
+  } catch {
+    return false;
+  }
+}
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -27,15 +42,19 @@ function createWindow(): void {
   window.webContents.on("will-navigate", (event, url) => {
     if (url !== window.webContents.getURL()) event.preventDefault();
   });
-  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
-  if (!app.isPackaged && rendererUrl) void window.loadURL(rendererUrl);
-  else void window.loadFile(join(directory, "../renderer/index.html"));
+  if (rendererUrl) void window.loadURL(rendererUrl);
+  else void window.loadURL(pathToFileURL(rendererFile).toString());
 }
 
 void app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, _permission, callback) => callback(false),
   );
+  registerIpc({
+    store: createFileWorkspaceStore(app.getPath("userData")),
+    importer: createImportService(),
+    isTrustedUrl,
+  });
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
