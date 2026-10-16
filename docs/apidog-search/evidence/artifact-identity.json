@@ -1,0 +1,14 @@
+{
+  "path": "C:\\Users\\Lucas Steffen\\AppData\\Local\\Programs\\Apidog\\resources\\app.asar",
+  "size_bytes": 440675242,
+  "sha256": "bfc70fa7511ec83de76abbf90386f0f881a44aa444792e0f449a3cf3cf9bab64",
+  "last_write_time_utc": "2026-09-30T03:28:10.0000000Z",
+  "selected_target": "User-supplied Apidog resources/app.asar",
+  "execution": "Static file analysis only",
+  "toolchain": "REA CLI 6.5.0; Node.js 24.21.0; ordinary ASAR header parser",
+  "entry_count": 43193,
+  "packed_entry_count": 41858,
+  "unpacked_entry_count": 1335,
+  "renderer_javascript_entry_count": 1166,
+  "source_map_member_count": 0
+}

@@ -1,0 +1,19 @@
+{
+  "source": "C:/Users/Lucas Steffen/AppData/Local/Programs/Apidog/resources/app.asar.unpacked/package.json",
+  "kind": "Supplementary unpacked package metadata; read after packed JavaScript investigation",
+  "sha256": "0e644055b475d4babc1fa8f328f6e77db21bd3fdfd80a0c9827a851f868f2c32",
+  "facts": [
+    {
+      "location": "/name",
+      "value": "apidog"
+    },
+    {
+      "location": "/version",
+      "value": "2.8.50"
+    },
+    {
+      "location": "/main",
+      "value": "dist/main/main.js"
+    }
+  ]
+}

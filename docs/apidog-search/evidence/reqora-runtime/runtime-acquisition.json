@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/electron/electron/releases/download/v44.8.0/electron-v44.8.0-win32-x64.zip",
+  "sha256": "1c9319bab793492715f7668e0be0e6a30bf2a8577275e40035bd33601bf6f573",
+  "checksumAuthority": "electron@44.8.0/checksums.json",
+  "reason": "Default Node installer stalled before receiving bytes; official curl download verified before extracting into dependency directory"
+}

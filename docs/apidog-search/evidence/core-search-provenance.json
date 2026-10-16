@@ -1,0 +1,36 @@
+{
+  "source": "C:/Users/Lucas Steffen/AppData/Local/Programs/Apidog/resources/app.asar",
+  "artifact_size": 440675242,
+  "members": [
+    {
+      "member": "dist/renderer/90387.c69ddba9.async.js",
+      "size": 395800,
+      "sha256": "fdcc8c8c7355cde9566682ed0f69ca85de83f9544713792e4326176bed2cc26d",
+      "artifact_offset": 82123107,
+      "declared_integrity": {
+        "algorithm": "SHA256",
+        "hash": "fdcc8c8c7355cde9566682ed0f69ca85de83f9544713792e4326176bed2cc26d",
+        "blockSize": 4194304,
+        "blocks": [
+          "fdcc8c8c7355cde9566682ed0f69ca85de83f9544713792e4326176bed2cc26d"
+        ]
+      },
+      "declared_hash_matches": true
+    },
+    {
+      "member": "dist/renderer/20401.291e096a.async.js",
+      "size": 587732,
+      "sha256": "f1e823b64d616ed56b42501abe60d41ac9d3c4f06a7c173532220862c9c692dd",
+      "artifact_offset": 15584564,
+      "declared_integrity": {
+        "algorithm": "SHA256",
+        "hash": "f1e823b64d616ed56b42501abe60d41ac9d3c4f06a7c173532220862c9c692dd",
+        "blockSize": 4194304,
+        "blocks": [
+          "f1e823b64d616ed56b42501abe60d41ac9d3c4f06a7c173532220862c9c692dd"
+        ]
+      },
+      "declared_hash_matches": true
+    }
+  ]
+}

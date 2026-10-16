@@ -1,0 +1,200 @@
+{
+  "projection_kind": "Ordinary bounded byte-window metadata projection; not a canonical REA Evidence object or official inspect-analysis-view result",
+  "source_file": "raw/rea-tree-search.json",
+  "source_file_size_bytes": 688955842,
+  "read_windows": [
+    {
+      "offset": 0,
+      "length": 8192
+    },
+    {
+      "offset": 688923074,
+      "length": 32768
+    }
+  ],
+  "header": {
+    "evidence_id": "ev_04474c9ce8b492a2fefb876fbf61a4e9d185901ea3aeecb45a8a92f89de8f2b0",
+    "subject": {
+      "name": "app.asar",
+      "digest": {
+        "sha256": "bfc70fa7511ec83de76abbf90386f0f881a44aa444792e0f449a3cf3cf9bab64"
+      },
+      "local_path": "C:\\Users\\Lucas Steffen\\AppData\\Local\\Programs\\Apidog\\resources\\app.asar",
+      "format": "asar",
+      "architecture": null
+    },
+    "provider": {
+      "id": "rea-javascript-application",
+      "name": "REA JavaScript application analyzer",
+      "version": "1"
+    },
+    "analysis_profile": null,
+    "predicate_type": "rea.javascript-application-analysis",
+    "operation": "analyze_javascript_application",
+    "parameters": {
+      "format": "auto",
+      "integrity_policy": "record-and-continue",
+      "max_semantic_nodes": 1500,
+      "max_semantic_nodes_per_file": 1500,
+      "source_paths": [
+        "dist/renderer/49423.3a17a3ae.async.js"
+      ],
+      "analysis_timeout_ms": 60000
+    },
+    "raw_result": null
+  },
+  "source_selection": {
+    "requested_paths": [
+      "dist/renderer/49423.3a17a3ae.async.js"
+    ],
+    "unselected_files": 40792
+  },
+  "footer": {
+    "confidence": "derived",
+    "authority": "shipped-artifact",
+    "environment": null,
+    "limitations": [
+      "Artifact integrity metadata contradicts observed bytes at node_modules/ssh2/util/pagent.exe; the observed bytes are untrusted.",
+      "Caller-selected source analysis leaves 40792 inventoried files outside analysis scope. Inventory identity covers the complete artifact; relationships through unselected sources remain unknown.",
+      "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+      "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+      "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+      "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+      "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+      "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+    ],
+    "relationship_coverage": null,
+    "locations": [
+      {
+        "kind": "artifact-path",
+        "path": "artifact-root"
+      }
+    ],
+    "evidence_links": []
+  },
+  "limits": [
+    "Complete raw JSON retained but not loaded into memory by this projector.",
+    "No claim that complete inventory or graph was reviewed.",
+    "Official view command could not process the large inline file within Node single-string limit."
+  ],
+  "normalized_result_field_ranges": [
+    {
+      "key": "input_path",
+      "start": 833,
+      "end": 914,
+      "size": 81
+    },
+    {
+      "key": "format",
+      "start": 924,
+      "end": 930,
+      "size": 6
+    },
+    {
+      "key": "root_artifact_sha256",
+      "start": 954,
+      "end": 1020,
+      "size": 66
+    },
+    {
+      "key": "inventory_manifest_id",
+      "start": 1045,
+      "end": 1115,
+      "size": 70
+    },
+    {
+      "key": "inventory_graph_sha256",
+      "start": 1141,
+      "end": 1207,
+      "size": 66
+    },
+    {
+      "key": "integrity_contradictions",
+      "start": 1235,
+      "end": 1962,
+      "size": 727
+    },
+    {
+      "key": "source_selection",
+      "start": 1982,
+      "end": 2068,
+      "size": 86
+    },
+    {
+      "key": "graph",
+      "start": 2077,
+      "end": 340902402,
+      "size": 340900325
+    },
+    {
+      "key": "summary",
+      "start": 340902413,
+      "end": 340902944,
+      "size": 531
+    },
+    {
+      "key": "statistics",
+      "start": 340902958,
+      "end": 340903159,
+      "size": 201
+    },
+    {
+      "key": "limitations",
+      "start": 340903174,
+      "end": 340904152,
+      "size": 978
+    },
+    {
+      "key": "semantic_graph",
+      "start": 340904170,
+      "end": 688954661,
+      "size": 348050491
+    }
+  ],
+  "normalized_result_selected": {
+    "summary": {
+      "browser_windows": 0,
+      "explicit_web_preferences": 0,
+      "preload_entrypoints": 0,
+      "context_bridge_apis": 0,
+      "exposed_api_members": 0,
+      "ipc": {
+        "operations": 0,
+        "literal_channels": 0,
+        "dynamic_channel_operations": 0,
+        "renderer_transmissions": 0,
+        "renderer_listeners": 0,
+        "main_handlers": 0,
+        "paired_renderer_transmissions": 0,
+        "ambiguous_renderer_transmissions": 0,
+        "unpaired_literal_renderer_transmissions": 0
+      },
+      "sender_validation_observations": 0,
+      "utility_processes": 0,
+      "resolved_utility_entrypoints": 0,
+      "native_addon_bindings": 0,
+      "resolved_native_addon_bindings": 0
+    },
+    "statistics": {
+      "relevant_files": 40793,
+      "nested_asar_containers": 0,
+      "text_bytes_read": 208024,
+      "invalid_utf8_files": 0,
+      "parsed_javascript_files": 1,
+      "visited_ast_nodes": 57810,
+      "findings": 1004,
+      "modules": 47,
+      "parse_failures": 0
+    },
+    "limitations": [
+      "Artifact integrity metadata contradicts observed bytes at node_modules/ssh2/util/pagent.exe; the observed bytes are untrusted.",
+      "Caller-selected source analysis leaves 40792 inventoried files outside analysis scope. Inventory identity covers the complete artifact; relationships through unselected sources remain unknown.",
+      "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+      "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+      "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+      "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+      "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+      "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+    ]
+  }
+}
