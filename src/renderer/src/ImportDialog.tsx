@@ -3,15 +3,20 @@ import { AlertTriangle, FileUp, Globe, LoaderCircle, Upload, X } from 'lucide-re
 import { planImport, sourceIdFor, type ImportMode } from '../../importer/plan'
 import type { ImportOutcome } from '../../shared/api'
 import type { ImportGrouping, Project } from '../../workspace/types'
+import { createEmptyProject } from '../../workspace/projects'
 import type { ImportGateway } from './importGateway'
 
 interface Props {
+  /** The active project ("Current project" target). */
   project: Project
+  /** Every other project, to show where this document was already imported. */
+  otherProjects?: Project[]
   gateway: ImportGateway
   /** A file dropped on the window before the dialog opened. */
   initialFile?: File
   onCancel(): void
-  onCommit(project: Project, summary: string): Promise<void>
+  /** `target` says whether `project` is a new project to add or the updated current one. */
+  onCommit(project: Project, summary: string, target: 'new' | 'current'): Promise<void>
   now?: () => string
 }
 
@@ -19,7 +24,7 @@ type Loaded = Extract<ImportOutcome, { ok: true }>
 
 const changeLabels = { added: 'New', updated: 'Updated', unchanged: 'Unchanged', removed: 'Removed', retained: 'Kept' } as const
 
-export default function ImportDialog({ project, gateway, initialFile, onCancel, onCommit, now = () => new Date().toISOString() }: Props): ReactNode {
+export default function ImportDialog({ project, otherProjects = [], gateway, initialFile, onCancel, onCommit, now = () => new Date().toISOString() }: Props): ReactNode {
   const [tab, setTab] = useState<'file' | 'url'>('file')
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,16 +36,28 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
   const [deleteUnmatched, setDeleteUnmatched] = useState(false)
   // Like Apidog (servers become environment candidates): on by default when the project has none.
   const [serversAsEnvironments, setServersAsEnvironments] = useState(project.environments.length === 0)
+  const [target, setTarget] = useState<'new' | 'current'>('new')
   const [dragging, setDragging] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const requestId = useRef(0)
 
   const previousSource = loaded ? project.importSources.find(source => source.id === sourceIdFor(loaded.origin)) : undefined
-  useEffect(() => { if (previousSource) setGrouping(previousSource.grouping) }, [previousSource])
+  const alsoIn = loaded ? otherProjects.filter(item => item.importSources.some(source => source.id === sourceIdFor(loaded.origin))) : []
+  // Default target: the current project when this document was imported into it before, otherwise a new project.
+  useEffect(() => {
+    if (!loaded) return
+    const reimport = !!project.importSources.find(source => source.id === sourceIdFor(loaded.origin))
+    setTarget(reimport ? 'current' : 'new')
+    setServersAsEnvironments(reimport ? project.environments.length === 0 : true)
+  }, [loaded])
+  useEffect(() => { if (previousSource && target === 'current') setGrouping(previousSource.grouping) }, [previousSource, target])
+  // A fresh project per loaded document, so its ID stays stable while options change.
+  const newProject = useMemo(() => loaded ? createEmptyProject(loaded.spec.title) : null, [loaded])
+  const baseProject = target === 'new' && newProject ? newProject : project
   const plan = useMemo(
-    () => loaded ? planImport(project, loaded.spec, loaded.origin, { grouping, mode, deleteUnmatched, serversAsEnvironments, now: now() }) : null,
+    () => loaded ? planImport(baseProject, loaded.spec, loaded.origin, { grouping, mode, deleteUnmatched, serversAsEnvironments, now: now() }) : null,
     // `now` is intentionally read when the inputs change, not on every render.
-    [loaded, project, grouping, mode, deleteUnmatched, serversAsEnvironments]
+    [loaded, baseProject, grouping, mode, deleteUnmatched, serversAsEnvironments]
   )
 
   async function run(load: () => Promise<ImportOutcome | null>): Promise<void> {
@@ -92,7 +109,8 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
     setCommitting(true)
     try {
       const verb = plan.isReimport ? (plan.mode === 'merge' ? 'Merged' : 'Overwrote with') : 'Imported'
-      await onCommit(plan.project, `${verb} ${plan.counts.endpoints} endpoints from ${plan.source.title}.`)
+      const where = target === 'new' ? ` into new project "${plan.project.name}"` : ''
+      await onCommit(plan.project, `${verb} ${plan.counts.endpoints} endpoints from ${plan.source.title}${where}.`, target)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'The import could not be saved.')
       setCommitting(false)
@@ -164,6 +182,18 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
               </dl>
             </div>
             <div className="import-options">
+              <fieldset className="mode-options target-options">
+                <legend>Import into</legend>
+                <label>
+                  <input type="radio" name="import-target" checked={target === 'new'} onChange={() => { setTarget('new'); setServersAsEnvironments(true) }} />
+                  <span><strong>New project</strong> “{loaded!.spec.title}”</span>
+                </label>
+                <label>
+                  <input type="radio" name="import-target" checked={target === 'current'} onChange={() => { setTarget('current'); setServersAsEnvironments(project.environments.length === 0) }} />
+                  <span><strong>Current project</strong> “{project.name}”{previousSource ? ' (imported here before)' : ''}</span>
+                </label>
+                {!!alsoIn.length && <span className="hint">Also imported in: {alsoIn.map(item => item.name).join(', ')}</span>}
+              </fieldset>
               <label>
                 Folders from
                 <select value={grouping} onChange={event => setGrouping(event.target.value as ImportGrouping)} aria-label="Folders from">

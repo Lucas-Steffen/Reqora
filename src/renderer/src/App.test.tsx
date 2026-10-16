@@ -16,7 +16,7 @@ import {
   type SearchResult,
 } from "../../search";
 import App from "./App";
-import { HISTORY_KEY, OPTIONS_KEY } from "./preferences";
+import { HISTORY_KEY, historyKey, OPTIONS_KEY } from "./preferences";
 
 const searchbox = () =>
   screen.getByRole("searchbox", { name: "Search project" });
@@ -46,7 +46,7 @@ describe("Project search workspace", () => {
     await user.click(screen.getByRole("button", { name: "Focus workspace" }));
     await user.keyboard("{Meta>}k{/Meta}");
     expect(searchbox()).toHaveFocus();
-    expect(JSON.parse(localStorage.getItem(HISTORY_KEY)!)).toEqual([
+    expect(JSON.parse(localStorage.getItem(historyKey("commerce"))!)).toEqual([
       "/v1/users/42",
     ]);
   });
@@ -148,7 +148,7 @@ describe("Project search workspace", () => {
     await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
     expect(search).not.toHaveBeenCalled();
     expect(searchbox()).toHaveValue("users");
-    expect(JSON.parse(localStorage.getItem(HISTORY_KEY)!)).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(historyKey("commerce"))!)).toEqual([]);
     fireEvent.compositionEnd(searchbox());
     await waitFor(() => expect(search).toHaveBeenCalledTimes(1));
     await results().findAllByRole("option");
@@ -229,7 +229,9 @@ describe("Project search workspace", () => {
       JSON.stringify(["users", "users", null, "orders"]),
     );
     render(<App />);
-    expect(results().getByRole("button", { name: "users" })).toBeVisible();
+    // Pre-multi-project global history migrates to the active project.
+    expect(await results().findByRole("button", { name: "users" })).toBeVisible();
+    expect(localStorage.getItem(HISTORY_KEY)).toBeNull();
     expect(results().getByRole("button", { name: "orders" })).toBeVisible();
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("Storage disabled");

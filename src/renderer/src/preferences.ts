@@ -6,8 +6,17 @@ import {
   type SearchOptions,
 } from "../../search";
 
+/** Pre-multi-project global history; migrated to the first active project. */
 export const HISTORY_KEY = "reqora.search.history.v1";
 export const OPTIONS_KEY = "reqora.search.options.v1";
+export const SCOPE_KEY = "reqora.search.scope.v1";
+
+export type SearchScope = "project" | "all";
+
+/** Search history is isolated per project. */
+export function historyKey(projectId: string): string {
+  return `${HISTORY_KEY}:${projectId}`;
+}
 const kinds: SearchKind[] = [
   "api",
   "folder",
@@ -25,8 +34,8 @@ function read(key: string): unknown {
   }
 }
 
-export function readHistory(): string[] {
-  const value = read(HISTORY_KEY);
+export function readHistory(key: string = HISTORY_KEY): string[] {
+  const value = read(key);
   return Array.isArray(value)
     ? [
         ...new Set(
@@ -97,6 +106,30 @@ export function readOptions(): SearchOptions {
     }
   }
   return { fields, kinds: selectedKinds, filters };
+}
+
+/** Moves the legacy global history to a project once, without overwriting existing project history. */
+export function migrateLegacyHistory(projectId: string): void {
+  try {
+    if (localStorage.getItem(HISTORY_KEY) === null) return;
+    if (localStorage.getItem(historyKey(projectId)) === null)
+      localStorage.setItem(historyKey(projectId), localStorage.getItem(HISTORY_KEY)!);
+    localStorage.removeItem(HISTORY_KEY);
+  } catch {
+    /* Unavailable storage: nothing to migrate. */
+  }
+}
+
+export function removePreference(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readScope(): SearchScope {
+  return read(SCOPE_KEY) === "all" ? "all" : "project";
 }
 
 export function savePreference(key: string, value: unknown): void {

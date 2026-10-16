@@ -43,16 +43,28 @@ import {
   type SearchResult,
 } from "../../search";
 import {
-  HISTORY_KEY,
+  historyKey,
+  migrateLegacyHistory,
   OPTIONS_KEY,
   readHistory,
   readOptions,
+  readScope,
   rememberQuery,
+  removePreference,
   savePreference,
+  SCOPE_KEY,
+  type SearchScope,
 } from "./preferences";
 import MetadataFilters from "./MetadataFilters";
 import ImportDialog from "./ImportDialog";
 import EnvironmentManager from "./EnvironmentManager";
+import ProjectManager from "./ProjectManager";
+import {
+  addProject,
+  compositeKey,
+  setActiveProject,
+  splitCompositeKey,
+} from "../../workspace/projects";
 import RequestPanel from "./RequestPanel";
 import { defaultRequestGateway, type RequestGateway } from "./requestGateway";
 import { resolveBaseUrl } from "../../runner/baseUrl";
@@ -163,14 +175,23 @@ export default function App({
     ? activeProject(workspaceState.workspace)
     : null;
   const [workspaceSearch] = useState(() => createMemorySearchRepository([]));
+  /** Every project's records under composite IDs, for "All projects" search. */
+  const [allProjectsSearch] = useState(() => createMemorySearchRepository([]));
+  const [searchScope, setSearchScope] = useState<SearchScope>(readScope);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const pendingSelection = useRef<string | null>(null);
   const repository = searchOverride ?? workspaceSearch;
+  const searchRepository =
+    searchScope === "all" && !searchOverride ? allProjectsSearch : repository;
   const [recordsVersion, setRecordsVersion] = useState(0);
   const [importOpen, setImportOpen] = useState<{ file?: File } | null>(null);
   const [notice, setNotice] = useState("");
   const [records, setRecords] = useState<SearchRecord[]>([]);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<SearchOptions>(readOptions);
-  const [history, setHistory] = useState(readHistory);
+  // Search history is per project; `historyProject` records which project `history` belongs to.
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyProject, setHistoryProject] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
@@ -215,8 +236,34 @@ export default function App({
   useEffect(() => {
     if (searchOverride || !project) return;
     workspaceSearch.replaceRecords(toSearchRecords(project));
+    allProjectsSearch.replaceRecords(
+      (workspaceState.workspace?.projects ?? []).flatMap((item) =>
+        toSearchRecords(item).map((record) => ({
+          ...record,
+          id: compositeKey(item.id, record.id),
+          ...(record.parentId
+            ? { parentId: compositeKey(item.id, record.parentId) }
+            : {}),
+        })),
+      ),
+    );
     setRecordsVersion((value) => value + 1);
-  }, [project, searchOverride, workspaceSearch]);
+  }, [project, searchOverride, workspaceSearch, allProjectsSearch, workspaceState.workspace]);
+
+  // Load the active project's search history (moving pre-multi-project history once).
+  const projectId = project?.id;
+  useEffect(() => {
+    if (!projectId) return;
+    migrateLegacyHistory(projectId);
+    setHistory(readHistory(historyKey(projectId)));
+    setHistoryProject(projectId);
+    // A cross-project search result selects its item once its project is active.
+    setSelectedId(pendingSelection.current);
+    pendingSelection.current = null;
+  }, [projectId]);
+  useEffect(() => {
+    savePreference(SCOPE_KEY, searchScope);
+  }, [searchScope]);
 
   useEffect(() => {
     if (workspaceState.error) setError(workspaceState.error);
@@ -240,8 +287,10 @@ export default function App({
   }, [repository, recordsVersion, searchOverride]);
 
   useEffect(() => {
-    savePreference(HISTORY_KEY, history);
-  }, [history]);
+    // Only save once the history shown belongs to the active project.
+    if (historyProject && historyProject === projectId)
+      savePreference(historyKey(historyProject), history);
+  }, [history, historyProject, projectId]);
   useEffect(() => {
     savePreference(OPTIONS_KEY, options);
   }, [options]);
@@ -258,7 +307,7 @@ export default function App({
     }
     setIsSearching(true);
     const timer = setTimeout(() => {
-      repository
+      searchRepository
         .search(query, options, controller.signal)
         .then((items) => {
           if (
@@ -287,7 +336,7 @@ export default function App({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, options, repository, hasQuery, isComposing, recordsVersion]);
+  }, [query, options, searchRepository, hasQuery, isComposing, recordsVersion]);
 
   useEffect(() => {
     function onKey(event: globalThis.KeyboardEvent): void {
@@ -332,7 +381,21 @@ export default function App({
   }
   function openResult(result: SearchResult): void {
     commitQuery();
-    openRecord(result.record);
+    const target =
+      searchScope === "all" ? splitCompositeKey(result.record.id) : undefined;
+    if (target && target.projectId !== project?.id) {
+      // A result from another project: switch to it, then select the item there.
+      pendingSelection.current = target.id;
+      void workspaceState
+        .update((workspace) => setActiveProject(workspace, target.projectId))
+        .catch(() => undefined);
+      return;
+    }
+    openRecord(
+      target
+        ? { ...result.record, id: target.id, parentId: result.record.parentId && splitCompositeKey(result.record.parentId)?.id }
+        : result.record,
+    );
   }
   function inputKeys(event: KeyboardEvent<HTMLInputElement>): void {
     if (isComposing || event.nativeEvent.isComposing || event.keyCode === 229)
@@ -401,9 +464,16 @@ export default function App({
       .update((workspace) => replaceProject(workspace, change(activeProject(workspace))))
       .catch(() => undefined);
   }
-  async function commitImport(next: typeof project, summary: string): Promise<void> {
-    if (!next) return;
-    await workspaceState.update((workspace) => replaceProject(workspace, next));
+  async function commitImport(
+    next: Project,
+    summary: string,
+    target: "new" | "current",
+  ): Promise<void> {
+    await workspaceState.update((workspace) =>
+      target === "new"
+        ? addProject(workspace, next)
+        : replaceProject(workspace, next),
+    );
     setImportOpen(null);
     setNotice(summary);
   }
@@ -487,10 +557,39 @@ export default function App({
           <span className="project-icon">
             {(project?.name ?? rootRecord?.name ?? "P").slice(0, 1)}
           </span>
-          <div>
-            <strong>{project?.name ?? rootRecord?.name ?? "Project"}</strong>
+          <div className="project-switcher">
+            {workspaceState.workspace && !searchOverride ? (
+              <select
+                aria-label="Active project"
+                value={workspaceState.workspace.activeProjectId}
+                onChange={(event) =>
+                  void workspaceState
+                    .update((workspace) =>
+                      setActiveProject(workspace, event.target.value),
+                    )
+                    .catch(() => undefined)
+                }
+              >
+                {workspaceState.workspace.projects.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <strong>{project?.name ?? rootRecord?.name ?? "Project"}</strong>
+            )}
             <span>{apiCount} endpoints</span>
           </div>
+          <button
+            className="icon-button"
+            title="Manage projects"
+            aria-label="Manage projects"
+            disabled={!workspaceState.workspace}
+            onClick={() => setProjectsOpen(true)}
+          >
+            <Layers3 size={15} />
+          </button>
           <button
             className="icon-button"
             title="Import OpenAPI / Swagger"
@@ -657,6 +756,26 @@ export default function App({
               </div>
             )}
             <div className="scope-row">
+              {!searchOverride && (
+                <div
+                  className="segmented search-scope"
+                  role="group"
+                  aria-label="Search scope"
+                >
+                  <button
+                    aria-pressed={searchScope === "project"}
+                    onClick={() => setSearchScope("project")}
+                  >
+                    This project
+                  </button>
+                  <button
+                    aria-pressed={searchScope === "all"}
+                    onClick={() => setSearchScope("all")}
+                  >
+                    All projects
+                  </button>
+                </div>
+              )}
               <span className="scope-label">INCLUDE</span>
               <button
                 className={`scope-chip ${options.kinds.length === kinds.length ? "selected" : ""}`}
@@ -1208,9 +1327,24 @@ export default function App({
           onChange={(next) => void updateProject(() => next)}
         />
       )}
+      {projectsOpen && workspaceState.workspace && (
+        <ProjectManager
+          workspace={workspaceState.workspace}
+          onChange={(change) =>
+            void workspaceState.update(change).catch(() => undefined)
+          }
+          onDeleted={(id) => removePreference(historyKey(id))}
+          onClose={() => setProjectsOpen(false)}
+        />
+      )}
       {importOpen && project && (
         <ImportDialog
           project={project}
+          otherProjects={
+            workspaceState.workspace?.projects.filter(
+              (item) => item.id !== project.id,
+            ) ?? []
+          }
           gateway={gateway}
           initialFile={importOpen.file}
           onCancel={() => setImportOpen(null)}

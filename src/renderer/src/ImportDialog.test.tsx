@@ -41,14 +41,18 @@ describe('OpenAPI import workflow', () => {
     await user.click(dialog().getByRole('button', { name: 'Import 5 endpoints' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(await screen.findByText('Imported 5 endpoints from Garden Supply API.')).toBeVisible()
+    expect(await screen.findByText('Imported 5 endpoints from Garden Supply API into new project "Garden Supply API".')).toBeVisible()
+    expect(screen.getByRole('combobox', { name: 'Active project' })).toHaveDisplayValue('Garden Supply API')
     expect(await screen.findByRole('button', { name: 'Plants' })).toBeVisible()
     await user.type(screen.getByRole('searchbox', { name: 'Search project' }), '/plants/pl_9')
     await waitFor(() => expect(results().getAllByRole('option')).toHaveLength(1))
     expect(results().getByRole('option')).toHaveTextContent('Get plant')
     const saved = await repository.load()
     expect(saved.revision).toBe(1)
-    expect(saved.projects[0].importSources[0]).toMatchObject({ location: 'garden.yaml', title: 'Garden Supply API' })
+    expect(saved.projects).toHaveLength(2)
+    expect(saved.projects[0].importSources).toEqual([])
+    expect(saved.projects[1].importSources[0]).toMatchObject({ location: 'garden.yaml', title: 'Garden Supply API' })
+    expect(saved.activeProjectId).toBe(saved.projects[1].id)
   })
 
   it('offers merge or overwrite on re-import and applies the chosen mode', async () => {
@@ -71,8 +75,8 @@ describe('OpenAPI import workflow', () => {
     await user.click(dialog().getByRole('button', { name: 'Overwrite import' }))
     expect(await screen.findByText('Overwrote with 5 endpoints from Garden Supply API.')).toBeVisible()
     const saved = await repository.load()
-    expect(saved.projects[0].importSources).toHaveLength(1)
-    expect(saved.projects[0].endpoints.find(endpoint => endpoint.path === '/plants')?.name).toBe('List all plants')
+    expect(saved.projects[1].importSources).toHaveLength(1)
+    expect(saved.projects[1].endpoints.find(endpoint => endpoint.path === '/plants')?.name).toBe('List all plants')
   })
 
   it('shows URL errors clearly and cancel leaves the workspace unchanged', async () => {
