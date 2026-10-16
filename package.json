@@ -1,0 +1,46 @@
+{
+  "name": "reqora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An API workspace with local project search",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "pnpm typecheck && electron-vite build",
+    "start": "electron-vite preview",
+    "dev:renderer": "vite --config vite.renderer.config.ts",
+    "preview:renderer": "vite preview --config vite.renderer.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke:electron": "node scripts/smoke-electron.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "1.57.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "5.0.4",
+    "electron": "44.8.0",
+    "electron-vite": "6.0.0",
+    "jsdom": "27.4.0",
+    "playwright": "1.58.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "4.0.18"
+  }
+}

@@ -1,0 +1,6 @@
+allowBuilds:
+  electron: true
+  esbuild: true
+  "@tailwindcss/oxide": true
+minimumReleaseAgeExclude:
+  - electron@44.8.0
