@@ -1,28 +1,49 @@
 import { _electron as electronTest } from 'playwright'
 import electronPath from 'electron'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { createServer } from 'node:http'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { searchScenario } from './smoke/search.mjs'
+import { importRoutes, importScenario } from './smoke/import.mjs'
 
-const evidence = resolve('docs/apidog-search/evidence/reqora-runtime')
-await mkdir(evidence, { recursive: true })
-const profile = await mkdtemp(join(tmpdir(), 'reqora-smoke-'))
+/**
+ * Launches the built Electron app with a hidden window and a throwaway
+ * profile, then runs the requested scenarios (default: all). All network
+ * traffic goes to a loopback server started here; nothing leaves the machine.
+ */
+const scenarios = { search: searchScenario, import: importScenario }
+const selected = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(scenarios)
+
+const workDir = await mkdtemp(join(tmpdir(), 'reqora-smoke-'))
+const profile = join(workDir, 'profile')
 const env = { ...process.env, REQORA_SMOKE_TEST: '1' }
 delete env.ELECTRON_RUN_AS_NODE
+
+const fixtures = resolve('src/importer/__fixtures__')
+const routes = {
+  ...importRoutes({ garden: await readFile(join(fixtures, 'garden.yaml'), 'utf8'), common: await readFile(join(fixtures, 'common.yaml'), 'utf8') }),
+  '/hang': { hang: true }
+}
+const hits = []
+const server = createServer((request, response) => {
+  const path = new URL(request.url, 'http://127.0.0.1').pathname
+  hits.push(path)
+  const route = routes[path]
+  if (!route) { response.writeHead(404); response.end(); return }
+  if (route.hang) { response.writeHead(200); response.write('openapi: 3.0.0\n'); return }
+  if (route.location) { response.writeHead(route.status ?? 302, { location: route.location }); response.end(); return }
+  response.writeHead(route.status ?? 200, { 'content-type': route.type ?? 'application/json' })
+  response.end(route.body)
+})
+await new Promise(done => server.listen(0, '127.0.0.1', done))
+const serverInfo = { url: `http://127.0.0.1:${server.address().port}`, hits, routes }
+
 let application
 let page
 const failures = []
-const checks = []
-const check = (name) => checks.push(name)
-async function capture(name) {
-  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => done()))))
-  const base64 = await application.evaluate(async ({ BrowserWindow }) => {
-    const image = await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })
-    return image.toPNG().toString('base64')
-  })
-  await writeFile(join(evidence, name), Buffer.from(base64, 'base64'))
-}
+const results = {}
 try {
   application = await electronTest.launch({
     executablePath: electronPath,
@@ -32,77 +53,35 @@ try {
   })
   page = await application.firstWindow()
   page.on('pageerror', error => failures.push(error.message))
-  const search = page.getByRole('searchbox', { name: 'Search project', exact: true })
-  await search.waitFor()
-  await page.getByRole('heading', { name: 'List users', exact: true }).waitFor()
-  check('Actual built Electron app loads its renderer and synthetic workspace')
-  const isolation = await page.evaluate(() => ({ node: typeof window.require, process: typeof window.process }))
-  assert.deepEqual(isolation, { node: 'undefined', process: 'undefined' })
-  check('Renderer has no Node require/process globals')
-
-  await page.keyboard.press('Control+k')
-  assert.equal(await search.evaluate(element => document.activeElement === element), true)
-  await search.fill('users')
-  await page.getByRole('option').first().waitFor()
-  assert.equal(await page.getByRole('option').count(), 7)
-  await capture('reqora-search.png')
-  check('Ctrl+K focuses search; users query returns 7 resources with real rendered results')
-
-  await search.fill('/v1/users/42')
-  await page.waitForFunction(() => document.querySelectorAll('[role="option"]').length === 2)
-  await search.press('ArrowDown')
-  await search.press('Enter')
-  await page.getByRole('heading', { name: 'Update user', exact: true }).waitFor()
-  check('Concrete parameterized path returns two endpoints; arrow/Enter opens selected detail')
-
-  await search.press('Escape')
-  assert.equal(await search.inputValue(), '')
-  await page.getByRole('button', { name: '/v1/users/42', exact: true }).waitFor()
-  check('Escape clears search and the committed query appears in recent history')
-  await page.reload()
-  await search.waitFor()
-  await page.getByRole('button', { name: '/v1/users/42', exact: true }).waitFor()
-  check('Recent query survives a renderer reload')
-
-  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
-  await page.getByRole('checkbox', { name: 'Draft', exact: true }).check()
-  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
-  assert.equal(await page.getByRole('option').count(), 1)
-  await capture('reqora-filters.png')
-  await page.reload()
-  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
-  assert.equal(await page.getByRole('option').count(), 1)
-  check('Blank-query metadata filtering finds the Draft endpoint and survives reload')
-  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
-  await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
-  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
-
-  await search.fill('<img src=x onerror=alert(1)>')
-  await page.getByRole('heading', { name: /No matches for/ }).waitFor()
-  assert.equal(await page.locator('img').count(), 0)
-  check('Query containing HTML renders as text and creates no image element')
-
-  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1000, 720))
-  await page.setViewportSize({ width: 1000, height: 720 })
-  await search.fill('checkout')
-  await page.getByRole('option').first().waitFor()
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
-  assert.equal(overflow, false)
-  await capture('reqora-search-compact.png')
-  check('Search remains usable at the Electron minimum viewport without horizontal overflow')
-  assert.deepEqual(failures, [])
-  check('No renderer page errors observed during the smoke scenario')
-  await writeFile(join(evidence, 'smoke-result.json'), JSON.stringify({
-    target: 'Reqora prototype (not Apidog)',
-    command: 'pnpm build && pnpm smoke:electron',
-    outcome: 'passed', checks, rendererErrors: failures,
-    screenshots: ['reqora-search.png', 'reqora-search-compact.png', 'reqora-filters.png']
-  }, null, 2))
-  console.log(JSON.stringify({ outcome: 'passed', checks }, null, 2))
+  async function capture(directory, name) {
+    await mkdir(resolve(directory), { recursive: true })
+    await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => done()))))
+    const base64 = await application.evaluate(async ({ BrowserWindow }) => {
+      const image = await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })
+      return image.toPNG().toString('base64')
+    })
+    await writeFile(join(resolve(directory), name), Buffer.from(base64, 'base64'))
+  }
+  for (const name of selected) {
+    const checks = []
+    const started = Date.now()
+    await scenarios[name]({ application, page, capture, check: label => checks.push(label), server: serverInfo, workDir })
+    assert.deepEqual(failures, [], `Renderer page errors during ${name}`)
+    checks.push('No renderer page errors observed during the scenario')
+    results[name] = { outcome: 'passed', durationMs: Date.now() - started, checks }
+    const evidence = resolve(`docs/apidog-${name}/evidence/reqora-runtime`)
+    await mkdir(evidence, { recursive: true })
+    await writeFile(join(evidence, 'smoke-result.json'), JSON.stringify({
+      target: 'Reqora (not Apidog)', command: `pnpm build && pnpm smoke:electron ${name}`, outcome: 'passed', checks, rendererErrors: failures
+    }, null, 2))
+  }
+  console.log(JSON.stringify(results, null, 2))
 } finally {
   await application?.close()
-  // Only remove the fresh, owned smoke-test profile after Electron exits.
-  if (resolve(profile).startsWith(resolve(tmpdir()) + '\\') || resolve(profile).startsWith(resolve(tmpdir()) + '/')) {
-    await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
+  server.closeAllConnections()
+  server.close()
+  // Only remove the fresh, owned smoke-test directory after Electron exits.
+  if (resolve(workDir).startsWith(resolve(tmpdir()) + '\\') || resolve(workDir).startsWith(resolve(tmpdir()) + '/')) {
+    await rm(workDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
   }
 }

@@ -1,0 +1,16 @@
+{
+  "target": "Reqora (not Apidog)",
+  "command": "pnpm build && pnpm smoke:electron import",
+  "outcome": "passed",
+  "checks": [
+    "File picker → main reads garden.yaml + sibling common.yaml ref → preview (5 endpoints, recursive-ref warning) → import",
+    "Imported endpoint is found by the existing search with a concrete parameterized path",
+    "Dropping library.json (Swagger 2.0 JSON) on the window opens the preview and imports 3 endpoints",
+    "URL import is fetched by the main process (no CORS headers served), follows a redirect and loads the relative external ref",
+    "Hanging server produces the 10 s timeout error; ftp:// is rejected with a clear message",
+    "Re-importing garden.yaml shows the merge/overwrite choice and applies overwrite",
+    "Imported folders persist across a renderer reload (atomic JSON store in userData)",
+    "No renderer page errors observed during the scenario"
+  ],
+  "rendererErrors": []
+}

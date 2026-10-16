@@ -1,10 +1,10 @@
 {
-  "target": "Reqora prototype (not Apidog)",
-  "command": "pnpm build && pnpm smoke:electron",
+  "target": "Reqora (not Apidog)",
+  "command": "pnpm build && pnpm smoke:electron search",
   "outcome": "passed",
   "checks": [
     "Actual built Electron app loads its renderer and synthetic workspace",
-    "Renderer has no Node require/process globals",
+    "Renderer has no Node require/process globals; preload exposes only window.reqora {importer, workspace}",
     "Ctrl+K focuses search; users query returns 7 resources with real rendered results",
     "Concrete parameterized path returns two endpoints; arrow/Enter opens selected detail",
     "Escape clears search and the committed query appears in recent history",
@@ -12,12 +12,7 @@
     "Blank-query metadata filtering finds the Draft endpoint and survives reload",
     "Query containing HTML renders as text and creates no image element",
     "Search remains usable at the Electron minimum viewport without horizontal overflow",
-    "No renderer page errors observed during the smoke scenario"
+    "No renderer page errors observed during the scenario"
   ],
-  "rendererErrors": [],
-  "screenshots": [
-    "reqora-search.png",
-    "reqora-search-compact.png",
-    "reqora-filters.png"
-  ]
+  "rendererErrors": []
 }

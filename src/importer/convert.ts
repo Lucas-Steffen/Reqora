@@ -136,7 +136,8 @@ export async function readSpec(document: Obj, options: ReadSpecOptions): Promise
   const schemaContainer = kind === 'swagger2' ? document.definitions : isObj(document.components) ? document.components.schemas : undefined
   const schemas: ImportedSchema[] = isObj(schemaContainer)
     ? Object.entries(schemaContainer).map(([name, schema]) => {
-      const expanded = resolver.deref(schema, uri, 12)
+      const pointer = `/${kind === 'swagger2' ? 'definitions' : 'components/schemas'}/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
+      const expanded = resolver.deref(schema, uri, 12, 50_000, pointer)
       return { name, description: isObj(expanded) ? str(expanded.description) : undefined, content: stringify(expanded) ?? '{}' }
     })
     : []
@@ -285,11 +286,11 @@ function openApiBody(content: Obj): RequestBody {
   const media = isObj(content[contentType]) ? content[contentType] as Obj : {}
   if (contentType === 'application/x-www-form-urlencoded' || contentType.startsWith('multipart/form-data')) {
     const schema = isObj(media.schema) ? media.schema : {}
-    const example = mediaExample(media)
+    const example = media.example ?? (isObj(media.examples) ? firstExample(media.examples) : undefined)
     const properties = isObj(schema.properties) ? schema.properties : {}
     const form = Object.entries(properties).map(([key, property]) => ({
       key,
-      value: scalarExample(isObj(example) ? example[key] : undefined) ?? '',
+      value: scalarExample(isObj(example) ? example[key] : undefined) ?? (isObj(property) ? scalarExample(property.example ?? property.default) : undefined) ?? '',
       enabled: true,
       description: isObj(property) ? str(property.description) : undefined
     }))

@@ -21,10 +21,20 @@ export function createFileWorkspaceStore(directory: string, beforePersist: Befor
 
   async function readCurrent(): Promise<Workspace> {
     if (current) return current
+    let text: string
     try {
-      const parsed: unknown = JSON.parse(await readFile(file, 'utf8'))
-      current = isWorkspace(parsed) ? parsed : createDemoWorkspace()
+      text = await readFile(file, 'utf8')
     } catch {
+      current = createDemoWorkspace()
+      return current
+    }
+    let parsed: unknown
+    try { parsed = JSON.parse(text) } catch { parsed = undefined }
+    if (isWorkspace(parsed)) {
+      current = parsed
+    } else {
+      // Keep the unreadable file for recovery instead of overwriting it on the next save.
+      await rename(file, `${file}.corrupt-${Date.now()}`).catch(() => undefined)
       current = createDemoWorkspace()
     }
     return current

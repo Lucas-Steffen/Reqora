@@ -28,11 +28,11 @@ import {
   Search,
   Settings2,
   Sparkles,
+  Upload,
   X,
 } from "lucide-react";
 import {
   createMemorySearchRepository,
-  demoRecords,
   fieldText,
   SEARCH_FIELDS,
   type SearchField,
@@ -51,8 +51,13 @@ import {
   savePreference,
 } from "./preferences";
 import MetadataFilters from "./MetadataFilters";
+import ImportDialog from "./ImportDialog";
+import { defaultImportGateway, type ImportGateway } from "./importGateway";
+import { defaultWorkspaceRepository, useWorkspace } from "./workspaceClient";
+import type { WorkspaceRepository } from "../../workspace/repository";
+import { toSearchRecords } from "../../workspace/records";
+import { activeProject, replaceProject } from "../../workspace/types";
 
-const defaultRepository = createMemorySearchRepository(demoRecords);
 const kindLabels: Record<SearchKind, string> = {
   api: "APIs",
   folder: "Folders",
@@ -124,12 +129,30 @@ function Highlight({
 }
 
 interface AppProps {
+  /** Overrides workspace-backed search (used by search-only tests). */
   repository?: SearchRepository;
+  workspaceRepository?: WorkspaceRepository;
+  importGateway?: ImportGateway;
 }
 
 export default function App({
-  repository = defaultRepository,
+  repository: searchOverride,
+  workspaceRepository,
+  importGateway,
 }: AppProps): ReactNode {
+  const [workspaceStore] = useState(
+    () => workspaceRepository ?? defaultWorkspaceRepository(),
+  );
+  const [gateway] = useState(() => importGateway ?? defaultImportGateway());
+  const workspaceState = useWorkspace(workspaceStore);
+  const project = workspaceState.workspace
+    ? activeProject(workspaceState.workspace)
+    : null;
+  const [workspaceSearch] = useState(() => createMemorySearchRepository([]));
+  const repository = searchOverride ?? workspaceSearch;
+  const [recordsVersion, setRecordsVersion] = useState(0);
+  const [importOpen, setImportOpen] = useState<{ file?: File } | null>(null);
+  const [notice, setNotice] = useState("");
   const [records, setRecords] = useState<SearchRecord[]>([]);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<SearchOptions>(readOptions);
@@ -160,12 +183,29 @@ export default function App({
   const visibleResults = hasQuery ? results : [];
   const apiCount = records.filter((record) => record.kind === "api").length;
   const fieldCount = options.fields.length;
-  const groups = useMemo(
-    () => records.filter((record) => record.kind === "folder"),
-    [records],
-  );
+  const rootRecord = records.find((record) => !record.parentId);
+  const childrenOf = useMemo(() => {
+    const map = new Map<string, SearchRecord[]>();
+    for (const record of records) {
+      if (!record.parentId) continue;
+      map.set(record.parentId, [...(map.get(record.parentId) ?? []), record]);
+    }
+    return map;
+  }, [records]);
+
+  // Feed the workspace into the pure search module whenever it changes.
+  useEffect(() => {
+    if (searchOverride || !project) return;
+    workspaceSearch.replaceRecords(toSearchRecords(project));
+    setRecordsVersion((value) => value + 1);
+  }, [project, searchOverride, workspaceSearch]);
 
   useEffect(() => {
+    if (workspaceState.error) setError(workspaceState.error);
+  }, [workspaceState.error]);
+
+  useEffect(() => {
+    if (!searchOverride && !recordsVersion) return;
     let disposed = false;
     repository
       .getAll()
@@ -179,7 +219,7 @@ export default function App({
     return () => {
       disposed = true;
     };
-  }, [repository]);
+  }, [repository, recordsVersion, searchOverride]);
 
   useEffect(() => {
     savePreference(HISTORY_KEY, history);
@@ -229,7 +269,7 @@ export default function App({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, options, repository, hasQuery, isComposing]);
+  }, [query, options, repository, hasQuery, isComposing, recordsVersion]);
 
   useEffect(() => {
     function onKey(event: globalThis.KeyboardEvent): void {
@@ -293,6 +333,55 @@ export default function App({
     setActiveIndex(next);
     resultRefs.current[next]?.scrollIntoView?.({ block: "nearest" });
   }
+  function renderTreeItem(record: SearchRecord, depth: number): ReactNode {
+    const indent = { paddingLeft: `${10 + depth * 14}px` };
+    if (record.kind !== "folder")
+      return (
+        <button
+          key={record.id}
+          className={`tree-record ${selected?.id === record.id ? "selected" : ""}`}
+          style={depth ? { paddingLeft: `${30 + depth * 14}px` } : undefined}
+          onClick={() => openRecord(record)}
+        >
+          <RecordIcon record={record} />
+          <span>{record.name}</span>
+        </button>
+      );
+    const isCollapsed = collapsed.includes(record.id);
+    const children = childrenOf.get(record.id) ?? [];
+    return (
+      <div className="tree-group" key={record.id}>
+        <button
+          className={`tree-folder ${selected?.id === record.id ? "selected" : ""}`}
+          style={depth ? indent : undefined}
+          onClick={() => {
+            setCollapsed((value) =>
+              value.includes(record.id)
+                ? value.filter((id) => id !== record.id)
+                : [...value, record.id],
+            );
+            openRecord(record);
+          }}
+          aria-expanded={!isCollapsed}
+        >
+          {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+          <Folder size={14} />
+          <span>{record.name}</span>
+        </button>
+        {!isCollapsed &&
+          [
+            ...children.filter((child) => child.kind !== "folder"),
+            ...children.filter((child) => child.kind === "folder"),
+          ].map((child) => renderTreeItem(child, depth + 1))}
+      </div>
+    );
+  }
+  async function commitImport(next: typeof project, summary: string): Promise<void> {
+    if (!next) return;
+    await workspaceState.update((workspace) => replaceProject(workspace, next));
+    setImportOpen(null);
+    setNotice(summary);
+  }
   function toggleField(field: SearchField): void {
     setOptions((previous) => ({
       ...previous,
@@ -311,7 +400,17 @@ export default function App({
   }
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onDragOver={(event) => {
+        if (event.dataTransfer?.types?.includes("Files")) event.preventDefault();
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        const file = event.dataTransfer?.files?.[0];
+        if (file && project && !importOpen) setImportOpen({ file });
+      }}
+    >
       <nav className="activity-bar" aria-label="Primary navigation">
         <div className="brand-mark" aria-label="Reqora">
           r<span>•</span>
@@ -360,12 +459,22 @@ export default function App({
           PROJECT <span className="local-dot" title="Stored locally" />
         </div>
         <div className="project-title">
-          <span className="project-icon">C</span>
+          <span className="project-icon">
+            {(project?.name ?? rootRecord?.name ?? "P").slice(0, 1)}
+          </span>
           <div>
-            <strong>Commerce API</strong>
+            <strong>{project?.name ?? rootRecord?.name ?? "Project"}</strong>
             <span>{apiCount} endpoints</span>
           </div>
-          <ChevronDown size={14} />
+          <button
+            className="icon-button"
+            title="Import OpenAPI / Swagger"
+            aria-label="Import OpenAPI / Swagger"
+            disabled={!project}
+            onClick={() => setImportOpen({})}
+          >
+            <Upload size={15} />
+          </button>
         </div>
         <button
           className="sidebar-search"
@@ -382,49 +491,10 @@ export default function App({
           <div className="tree-heading">
             COLLECTION <span>{records.length}</span>
           </div>
-          {groups
-            .filter((group) => group.parentId)
-            .map((group) => (
-              <div className="tree-group" key={group.id}>
-                <button
-                  className={`tree-folder ${selected?.id === group.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setCollapsed((value) =>
-                      value.includes(group.id)
-                        ? value.filter((id) => id !== group.id)
-                        : [...value, group.id],
-                    );
-                    openRecord(group);
-                  }}
-                  aria-expanded={!collapsed.includes(group.id)}
-                >
-                  {collapsed.includes(group.id) ? (
-                    <ChevronRight size={13} />
-                  ) : (
-                    <ChevronDown size={13} />
-                  )}
-                  <Folder size={14} />
-                  <span>{group.name}</span>
-                </button>
-                {!collapsed.includes(group.id) &&
-                  records
-                    .filter(
-                      (record) =>
-                        record.parentId === group.id &&
-                        record.kind !== "folder",
-                    )
-                    .map((record) => (
-                      <button
-                        key={record.id}
-                        className={`tree-record ${selected?.id === record.id ? "selected" : ""}`}
-                        onClick={() => openRecord(record)}
-                      >
-                        <RecordIcon record={record} />
-                        <span>{record.name}</span>
-                      </button>
-                    ))}
-              </div>
-            ))}
+          {rootRecord &&
+            (childrenOf.get(rootRecord.id) ?? []).map((record) =>
+              renderTreeItem(record, 0),
+            )}
         </div>
         <div className="sidebar-footer">
           <span className="local-dot" /> All changes are local <span>v0.1</span>
@@ -434,7 +504,7 @@ export default function App({
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-breadcrumb">
-            <span>Commerce API</span>
+            <span>{project?.name ?? rootRecord?.name ?? "Project"}</span>
             <ChevronRight size={13} />
             <strong>Search</strong>
           </div>
@@ -1020,13 +1090,31 @@ export default function App({
           <span>
             <span className="local-dot" /> Local search ready
           </span>
+          {notice && (
+            <span className="status-notice" role="status">
+              {notice}
+              <button aria-label="Dismiss notice" onClick={() => setNotice("")}>
+                <X size={11} />
+              </button>
+            </span>
+          )}
           <span>
-            Commerce API <span className="status-separator">/</span>{" "}
+            {project?.name ?? rootRecord?.name}{" "}
+            <span className="status-separator">/</span>{" "}
             {records.length} resources{" "}
             <span className="status-separator">/</span> UTF-8
           </span>
         </footer>
       </main>
+      {importOpen && project && (
+        <ImportDialog
+          project={project}
+          gateway={gateway}
+          initialFile={importOpen.file}
+          onCancel={() => setImportOpen(null)}
+          onCommit={commitImport}
+        />
+      )}
     </div>
   );
 }

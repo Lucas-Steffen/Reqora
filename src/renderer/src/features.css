@@ -1,0 +1,352 @@
+/* Shared controls and dialogs added for import, environments, scripts and auth. */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #9ba1b2;
+}
+.icon-button:hover:not(:disabled) {
+  background: #272a33;
+  color: #e4e5e9;
+}
+.project-title .icon-button {
+  margin-left: auto;
+}
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.primary-button {
+  background: #b7ef7b;
+  color: #15180f;
+}
+.primary-button:hover:not(:disabled) {
+  background: #c9f69a;
+}
+.secondary-button {
+  border: 1px solid #383b46;
+  color: #c8cbd5;
+}
+.secondary-button:hover:not(:disabled) {
+  background: #24262f;
+}
+.danger-button {
+  color: #f19a91;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #07080bb3;
+}
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  border: 1px solid #353844;
+  border-radius: 12px;
+  background: #181a21;
+  box-shadow: 0 30px 80px #000a;
+  outline: none;
+}
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #282b34;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.modal-header p {
+  margin: 4px 0 0;
+  color: #858a99;
+  font-size: 12px;
+}
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+.modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #282b34;
+}
+.spacer {
+  flex: 1;
+}
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #22242c;
+  margin-bottom: 14px;
+}
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  color: #9ba1b2;
+  font-size: 12px;
+}
+.segmented button[aria-selected="true"],
+.segmented button[aria-pressed="true"] {
+  background: #343844;
+  color: #f1f2f5;
+}
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 34px 20px;
+  border: 1.5px dashed #3f4452;
+  border-radius: 10px;
+  color: #a5aab8;
+  text-align: center;
+}
+.drop-zone.dragging {
+  border-color: #b7ef7b;
+  background: #b7ef7b0d;
+}
+.drop-zone span,
+.hint {
+  color: #7d8292;
+  font-size: 11px;
+}
+.drop-zone .primary-button {
+  margin-top: 8px;
+}
+.url-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.url-form label {
+  font-size: 11px;
+  color: #a5aab8;
+}
+.url-row {
+  display: flex;
+  gap: 8px;
+}
+.text-input,
+.url-row input,
+.import-options select,
+.field-grid input,
+.field-grid select,
+.kv-table input,
+.kv-table select,
+.request-line input,
+.request-line select,
+.inline-select {
+  min-width: 0;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid #353844;
+  border-radius: 6px;
+  background: #111217;
+  color: #e4e5e9;
+  font: inherit;
+  font-size: 12px;
+}
+.url-row input {
+  flex: 1;
+}
+textarea.code-input {
+  width: 100%;
+  min-height: 140px;
+  padding: 9px;
+  border: 1px solid #353844;
+  border-radius: 6px;
+  background: #111217;
+  color: #e4e5e9;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  resize: vertical;
+}
+.import-status,
+.import-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.import-status {
+  background: #22242c;
+  color: #b3b7c4;
+}
+.import-error {
+  background: #3a1d1d;
+  color: #f4b4ad;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.preview-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+.preview-summary strong {
+  display: block;
+  font-size: 14px;
+}
+.preview-summary span {
+  font-size: 11px;
+  color: #858a99;
+}
+.preview-summary dl {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+}
+.preview-summary dt {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7d8292;
+}
+.preview-summary dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.import-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0 12px;
+  font-size: 12px;
+}
+.import-options > label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #a5aab8;
+}
+.mode-options {
+  flex: 1;
+  min-width: 300px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #45503a;
+  border-radius: 8px;
+}
+.mode-options legend {
+  padding: 0 4px;
+  color: #c9e8a6;
+}
+.mode-options label {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  color: #b3b7c4;
+}
+.import-warnings {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #e6cf8c;
+}
+.import-warnings summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.import-warnings ul {
+  margin: 6px 0 0;
+  padding-left: 22px;
+  color: #c9c3ad;
+}
+.preview-table {
+  border: 1px solid #2a2d36;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 11px;
+}
+.preview-row {
+  display: grid;
+  grid-template-columns: 58px minmax(140px, 2fr) minmax(120px, 2fr) minmax(90px, 1fr) 80px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-top: 1px solid #23252d;
+}
+.preview-row.head {
+  border-top: 0;
+  background: #1f2128;
+  color: #7d8292;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.preview-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.change-badge {
+  justify-self: start;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #2a2d36;
+  color: #a5aab8;
+}
+.change-added .change-badge {
+  background: #2f4120;
+  color: #c9f29f;
+}
+.change-updated .change-badge {
+  background: #23345a;
+  color: #b7c9f5;
+}
+.change-removed .change-badge {
+  background: #4a2323;
+  color: #f4b4ad;
+}
+.status-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #c9f29f;
+}
+.status-notice button {
+  display: inline-flex;
+  color: inherit;
+}

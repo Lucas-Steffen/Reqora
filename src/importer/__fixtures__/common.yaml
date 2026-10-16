@@ -1,0 +1,7 @@
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string, example: NOT_FOUND }
+        message: { type: string }

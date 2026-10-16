@@ -176,7 +176,7 @@ export class RefResolver {
    * the current path is recursive: it is kept as { $ref, "x-circular": true }
    * instead of expanding forever. `maxDepth` bounds pathological nesting.
    */
-  deref(node: Json, uri: string, maxDepth = 64, maxNodes = 50_000): Json {
+  deref(node: Json, uri: string, maxDepth = 64, maxNodes = 50_000, selfPointer?: string): Json {
     let budget = maxNodes
     const walk = (value: Json, base: string, stack: string[], depth: number): Json => {
       if (!value || typeof value !== 'object') return value
@@ -209,6 +209,6 @@ export class RefResolver {
       }
       return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, walk(item, base, stack, depth + 1)]))
     }
-    return walk(node, uri, [], 0)
+    return walk(node, uri, selfPointer === undefined ? [] : [`${uri}#${selfPointer}`], 0)
   }
 }

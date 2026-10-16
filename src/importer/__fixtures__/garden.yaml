@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: Garden Supply API
+  version: 1.4.0
+servers:
+  - url: https://{region}.garden.test/v1
+    variables:
+      region:
+        default: eu
+tags:
+  - name: Plants
+    description: Everything that grows.
+  - name: Store/Orders
+    description: Orders placed in the shop.
+security:
+  - apiKeyAuth: []
+paths:
+  /plants:
+    get:
+      tags: [Plants]
+      summary: List plants
+      operationId: listPlants
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plant'
+    post:
+      tags: [Plants]
+      summary: Create plant
+      requestBody:
+        content:
+          application/json:
+            example: { name: Fern, tree: { label: root, children: [] } }
+            schema:
+              $ref: '#/components/schemas/Plant'
+      responses:
+        '201':
+          description: Created
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+  /plants/{plantId}:
+    parameters:
+      - name: plantId
+        in: path
+        required: true
+        schema: { type: string }
+        description: Inherited description
+      - name: X-Trace
+        in: header
+        schema: { type: string }
+    get:
+      tags: [Plants]
+      summary: Get plant
+      parameters:
+        - name: plantId
+          in: path
+          required: true
+          description: The plant identifier
+          example: pl_1
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/a~1b'
+  /store/orders:
+    post:
+      tags: [Store/Orders, Plants]
+      summary: Place order
+      deprecated: true
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                plantId: { type: string, description: Plant to buy }
+                quantity: { type: integer }
+      responses:
+        '200': { description: OK }
+  /health:
+    get:
+      operationId: health
+      responses:
+        '204': { description: No content }
+components:
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, default: 20 }
+  schemas:
+    Plant:
+      type: object
+      description: A plant.
+      properties:
+        name: { type: string, example: Monstera }
+        tree:
+          $ref: '#/components/schemas/Node'
+    Node:
+      type: object
+      properties:
+        label: { type: string }
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+    a/b:
+      type: object
+      properties:
+        escaped: { type: boolean }
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key

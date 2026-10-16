@@ -12,6 +12,8 @@ export interface ImportOrigin {
 export interface PlanOptions {
   grouping: ImportGrouping
   mode: ImportMode
+  /** Remove this source's endpoints and schemas that are missing from the new document (Apidog: off by default). */
+  deleteUnmatched?: boolean
   /** ISO timestamp, injected for deterministic tests. */
   now: string
 }
@@ -96,9 +98,10 @@ function specFields(operation: ImportedOperation, spec: ImportedSpec) {
  *
  * - A new location is added as a new source; existing items are untouched.
  * - merge: matched (method + path) endpoints get updated spec fields but keep
- *   their ID and user-owned fields; items missing from the new document are retained.
- * - overwrite: the source's items are replaced by the new document; items missing
- *   from it are removed. Folders still holding manual items are kept.
+ *   their ID and user-owned fields (status, maintainer, auth, scripts).
+ * - overwrite: matched endpoints are replaced by the document's version (only the ID is kept).
+ * - deleteUnmatched: the source's items missing from the new document are removed;
+ *   otherwise they are retained. Folders still holding retained or manual items are kept.
  * Other sources and manually created items are never modified.
  */
 export function planImport(project: Project, spec: ImportedSpec, origin: ImportOrigin, options: PlanOptions): ImportPlan {
@@ -166,7 +169,7 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
 
   const missing = [...existingByKey.values()].filter(endpoint => !seenKeys.has(endpoint.source!.key))
   for (const endpoint of missing) {
-    rows.push({ id: endpoint.id, method: endpoint.method, path: endpoint.path, name: endpoint.name, folder: '', change: options.mode === 'merge' ? 'retained' : 'removed' })
+    rows.push({ id: endpoint.id, method: endpoint.method, path: endpoint.path, name: endpoint.name, folder: '', change: options.deleteUnmatched ? 'removed' : 'retained' })
   }
 
   // Schemas live in a "Schemas" folder for the source.
@@ -181,12 +184,12 @@ export function planImport(project: Project, spec: ImportedSpec, origin: ImportO
     source: { sourceId, key: `schema:${schema.name}` }
   }))
 
-  // Retained (merge) items keep their old folders; overwrite drops them.
-  const retainedEndpoints = options.mode === 'merge' ? missing : []
+  // Retained items keep their old folders.
+  const retainedEndpoints = options.deleteUnmatched ? [] : missing
   const newSchemaKeys = new Set(nextSourceResources.map(resource => resource.source!.key))
-  const retainedResources = options.mode === 'merge'
-    ? project.resources.filter(resource => fromSource(resource) && !newSchemaKeys.has(resource.source!.key))
-    : []
+  const retainedResources = options.deleteUnmatched
+    ? []
+    : project.resources.filter(resource => fromSource(resource) && !newSchemaKeys.has(resource.source!.key))
   const manualItems = [...project.endpoints.filter(item => !fromSource(item)), ...project.resources.filter(item => !fromSource(item))]
   const newFolderIds = new Set([...newFolders.values()].map(folder => folder.id))
   const oldSourceFolders = project.folders.filter(fromSource)

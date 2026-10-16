@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict'
+
+/** The original search scenario, unchanged in intent. */
+export async function searchScenario({ application, page, capture, check }) {
+  const evidence = 'docs/apidog-search/evidence/reqora-runtime'
+  const search = page.getByRole('searchbox', { name: 'Search project', exact: true })
+  await search.waitFor()
+  await page.getByRole('heading', { name: 'List users', exact: true }).waitFor()
+  check('Actual built Electron app loads its renderer and synthetic workspace')
+  const isolation = await page.evaluate(() => ({ node: typeof window.require, process: typeof window.process, api: Object.keys(window.reqora ?? {}).sort() }))
+  assert.equal(isolation.node, 'undefined')
+  assert.equal(isolation.process, 'undefined')
+  check(`Renderer has no Node require/process globals; preload exposes only window.reqora {${isolation.api.join(', ')}}`)
+
+  await page.keyboard.press('Control+k')
+  assert.equal(await search.evaluate(element => document.activeElement === element), true)
+  await search.fill('users')
+  await page.getByRole('option').first().waitFor()
+  assert.equal(await page.getByRole('option').count(), 7)
+  await capture(evidence, 'reqora-search.png')
+  check('Ctrl+K focuses search; users query returns 7 resources with real rendered results')
+
+  await search.fill('/v1/users/42')
+  await page.waitForFunction(() => document.querySelectorAll('[role="option"]').length === 2)
+  await search.press('ArrowDown')
+  await search.press('Enter')
+  await page.getByRole('heading', { name: 'Update user', exact: true }).waitFor()
+  check('Concrete parameterized path returns two endpoints; arrow/Enter opens selected detail')
+
+  await search.press('Escape')
+  assert.equal(await search.inputValue(), '')
+  await page.getByRole('button', { name: '/v1/users/42', exact: true }).waitFor()
+  check('Escape clears search and the committed query appears in recent history')
+  await page.reload()
+  await search.waitFor()
+  await page.getByRole('button', { name: '/v1/users/42', exact: true }).waitFor()
+  check('Recent query survives a renderer reload')
+
+  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Draft', exact: true }).check()
+  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
+  assert.equal(await page.getByRole('option').count(), 1)
+  await capture(evidence, 'reqora-filters.png')
+  await page.reload()
+  await page.getByRole('option', { name: /Cancel order/ }).waitFor()
+  assert.equal(await page.getByRole('option').count(), 1)
+  check('Blank-query metadata filtering finds the Draft endpoint and survives reload')
+  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
+  await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
+  await page.getByRole('button', { name: 'Choose search fields', exact: true }).click()
+
+  await search.fill('<img src=x onerror=alert(1)>')
+  await page.getByRole('heading', { name: /No matches for/ }).waitFor()
+  assert.equal(await page.locator('img').count(), 0)
+  check('Query containing HTML renders as text and creates no image element')
+
+  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1000, 720))
+  await page.setViewportSize({ width: 1000, height: 720 })
+  await search.fill('checkout')
+  await page.getByRole('option').first().waitFor()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
+  assert.equal(overflow, false)
+  await capture(evidence, 'reqora-search-compact.png')
+  check('Search remains usable at the Electron minimum viewport without horizontal overflow')
+  await search.fill('')
+  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1440, 960))
+  await page.setViewportSize({ width: 1440, height: 960 })
+}
