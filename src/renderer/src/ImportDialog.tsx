@@ -29,6 +29,8 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
   const [grouping, setGrouping] = useState<ImportGrouping>('tags')
   const [mode, setMode] = useState<ImportMode>('merge')
   const [deleteUnmatched, setDeleteUnmatched] = useState(false)
+  // Like Apidog (servers become environment candidates): on by default when the project has none.
+  const [serversAsEnvironments, setServersAsEnvironments] = useState(project.environments.length === 0)
   const [dragging, setDragging] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const requestId = useRef(0)
@@ -36,9 +38,9 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
   const previousSource = loaded ? project.importSources.find(source => source.id === sourceIdFor(loaded.origin)) : undefined
   useEffect(() => { if (previousSource) setGrouping(previousSource.grouping) }, [previousSource])
   const plan = useMemo(
-    () => loaded ? planImport(project, loaded.spec, loaded.origin, { grouping, mode, deleteUnmatched, now: now() }) : null,
+    () => loaded ? planImport(project, loaded.spec, loaded.origin, { grouping, mode, deleteUnmatched, serversAsEnvironments, now: now() }) : null,
     // `now` is intentionally read when the inputs change, not on every render.
-    [loaded, project, grouping, mode, deleteUnmatched]
+    [loaded, project, grouping, mode, deleteUnmatched, serversAsEnvironments]
   )
 
   async function run(load: () => Promise<ImportOutcome | null>): Promise<void> {
@@ -169,6 +171,20 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
                   <option value="paths">First URL path segment</option>
                 </select>
               </label>
+              <div className="server-options">
+                <span>Base URL</span>
+                {loaded!.spec.servers.length ? (
+                  <>
+                    <code>{loaded!.spec.servers[0].url}</code>
+                    <label>
+                      <input type="checkbox" checked={serversAsEnvironments} onChange={event => setServersAsEnvironments(event.target.checked)} />
+                      Create {loaded!.spec.servers.length === 1 ? 'an environment' : `${loaded!.spec.servers.length} environments`} from the document's servers
+                    </label>
+                  </>
+                ) : (
+                  <span className="hint">The document declares no usable server. Set a base URL in an environment to send requests.</span>
+                )}
+              </div>
               {plan.isReimport && (
                 <fieldset className="mode-options">
                   <legend>This document was imported before</legend>

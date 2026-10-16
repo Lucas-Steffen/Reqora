@@ -96,7 +96,7 @@ describe('request tab', () => {
     const fake = gateway({ unresolved: ['missing'] })
     render(<App workspaceRepository={createMemoryWorkspaceRepository()} requestGateway={fake} />)
     await user.click(await screen.findByRole('tab', { name: 'Request' }))
-    expect(screen.getByText('Base URL from', { exact: false })).toHaveTextContent('Base URL from Local: http://127.0.0.1:4010')
+    expect(screen.getByText('Base URL (Local):', { exact: false })).toHaveTextContent('Base URL (Local): http://127.0.0.1:4010')
     await user.click(screen.getByRole('tab', { name: 'Headers' }))
     await user.click(screen.getByRole('button', { name: 'Add' }))
     await user.type(screen.getByRole('textbox', { name: 'Headers name' }), 'X-Api-Key')

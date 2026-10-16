@@ -55,7 +55,7 @@ import ImportDialog from "./ImportDialog";
 import EnvironmentManager from "./EnvironmentManager";
 import RequestPanel from "./RequestPanel";
 import { defaultRequestGateway, type RequestGateway } from "./requestGateway";
-import { activeEnvironment } from "../../environments/variables";
+import { resolveBaseUrl } from "../../runner/baseUrl";
 import { setActiveEnvironment } from "../../environments/operations";
 import type { Project } from "../../workspace/types";
 import { defaultImportGateway, type ImportGateway } from "./importGateway";
@@ -1063,8 +1063,7 @@ export default function App({
                     {activeTab === "request" && selectedEndpoint && project ? (
                       <RequestPanel
                         endpoint={selectedEndpoint}
-                        baseUrl={activeEnvironment(project)?.baseUrl}
-                        environmentName={activeEnvironment(project)?.name}
+                        describeBase={(url) => resolveBaseUrl(project, selectedEndpoint, url)}
                         send={async (draft) => {
                           await workspaceState.flush();
                           return requests.send({ endpointId: selectedEndpoint.id, draft });

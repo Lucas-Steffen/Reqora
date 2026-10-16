@@ -120,6 +120,28 @@ export default function EnvironmentManager({ project, onChange, onClose, reveal 
                   reveal={reveal}
                   onChange={variables => onChange(updateEnvironment(project, environment.id, item => ({ ...item, variables })))}
                 />
+                {project.importSources.length > 0 && (
+                  <div className="service-urls" role="group" aria-label="Imported API base URLs">
+                    <div className="detail-section-heading">IMPORTED API BASE URLS</div>
+                    <p className="hint">Overrides the server declared in each imported document while this environment is active. Leave empty to use the document's server.</p>
+                    {project.importSources.map(source => (
+                      <label key={source.id} className="service-url-row">
+                        <span>{source.title}</span>
+                        <input
+                          aria-label={`Base URL for ${source.title}`}
+                          placeholder={source.servers?.[0] ?? 'No server in the document'}
+                          value={environment.serviceUrls?.[source.id] ?? ''}
+                          onChange={event => onChange(updateEnvironment(project, environment.id, item => {
+                            const serviceUrls = { ...item.serviceUrls }
+                            if (event.target.value) serviceUrls[source.id] = event.target.value
+                            else delete serviceUrls[source.id]
+                            return { ...item, serviceUrls }
+                          }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <>

@@ -2,12 +2,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { AlertTriangle, LoaderCircle, Plus, Save, Send, Trash2 } from 'lucide-react'
 import { draftFromEndpoint, type RequestDraft } from '../../runner/prepare'
 import type { RunResult } from '../../runner/run'
+import type { ResolvedBaseUrl } from '../../runner/baseUrl'
 import { HTTP_METHODS, type BodyMode, type Endpoint, type HttpMethod, type KeyValue } from '../../workspace/types'
 
 interface Props {
   endpoint: Endpoint
-  baseUrl?: string
-  environmentName?: string
+  /** Which base URL applies to a given URL, and why (see runner/baseUrl.ts). */
+  describeBase(url: string): ResolvedBaseUrl
   send(draft: RequestDraft): Promise<RunResult>
   save(draft: RequestDraft): Promise<void>
   /** Extra tabs contributed by later features (scripts, auth). */
@@ -43,7 +44,7 @@ function formatBody(body: string, contentType?: string): string {
   return body
 }
 
-export default function RequestPanel({ endpoint, baseUrl, environmentName, send, save, extraTabs = [], renderResultExtras }: Props): ReactNode {
+export default function RequestPanel({ endpoint, describeBase, send, save, extraTabs = [], renderResultExtras }: Props): ReactNode {
   const [draft, setDraft] = useState<RequestDraft>(() => draftFromEndpoint(endpoint))
   const [section, setSection] = useState<string>('query')
   const [result, setResult] = useState<RunResult | null>(null)
@@ -83,9 +84,10 @@ export default function RequestPanel({ endpoint, baseUrl, environmentName, send,
         <button className="secondary-button" type="button" disabled={!dirty || busy} onClick={async () => { await save(draft); setDirty(false) }}><Save size={14} /> Save</button>
       </form>
       <div className="request-base hint">
-        {/^https?:\/\//i.test(draft.url) || draft.url.startsWith('{{')
-          ? 'Absolute URL: the environment base URL is not added.'
-          : baseUrl ? <>Base URL from <strong>{environmentName}</strong>: <code>{baseUrl}</code></> : 'No environment selected: use an absolute URL or choose an environment.'}
+        {(() => {
+          const base = describeBase(draft.url)
+          return base.baseUrl ? <>Base URL ({base.label}): <code>{base.baseUrl}</code></> : base.label
+        })()}
       </div>
       <div className="segmented request-sections" role="tablist" aria-label="Request parts">
         {(Object.keys(sectionLabels) as Section[]).map(key => (
@@ -116,7 +118,7 @@ export default function RequestPanel({ endpoint, baseUrl, environmentName, send,
           {!!result.unresolved.length && (
             <div className="import-error warning" role="status"><AlertTriangle size={14} /> Unresolved variables: {result.unresolved.map(name => `{{${name}}}`).join(', ')}</div>
           )}
-          {result.error && <div className="import-error" role="alert"><AlertTriangle size={14} /> {result.error}</div>}
+          {result.error && <div className="import-error" role="alert"><AlertTriangle size={14} /> {result.errorCode && <strong className="error-code">{result.errorCode}</strong>} {result.error}</div>}
           {result.response && (
             <>
               <div className="response-meta">
