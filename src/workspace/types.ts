@@ -154,7 +154,7 @@ export interface Project {
 }
 
 export interface Workspace {
-  version: 1
+  version: 2
   /** Monotonic revision, incremented by the store on every successful save. */
   revision: number
   activeProjectId: string

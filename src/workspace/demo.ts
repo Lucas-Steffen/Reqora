@@ -55,5 +55,5 @@ export function createDemoProject(): Project {
 
 export function createDemoWorkspace(): Workspace {
   const project = createDemoProject()
-  return { version: 1, revision: 0, activeProjectId: project.id, projects: [project] }
+  return { version: 2, revision: 0, activeProjectId: project.id, projects: [project] }
 }

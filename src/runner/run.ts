@@ -15,6 +15,8 @@ export interface HttpResponseView {
 }
 
 export interface RunInput {
+  /** Project that owns the endpoint; defaults to the active project. IDs are only unique per project. */
+  projectId?: string
   endpointId: string
   /** Unsaved edits from the request editor; defaults to the stored endpoint. */
   draft?: RequestDraft
@@ -52,7 +54,8 @@ function bodyText(request: PreparedRequest): string | undefined {
 
 /** Resolve variables, send, and return a redacted view of the exchange. */
 export async function runRequest(input: RunInput, deps: RunDependencies): Promise<RunResult> {
-  const project = activeProject(deps.workspace)
+  const project = input.projectId ? deps.workspace.projects.find(item => item.id === input.projectId) : activeProject(deps.workspace)
+  if (!project) return { ok: false, error: "The project no longer exists.", unresolved: [] }
   const endpoint = project.endpoints.find(item => item.id === input.endpointId)
   if (!endpoint) return { ok: false, error: 'The endpoint no longer exists.', unresolved: [] }
   const secrets = await secretValues(project, deps.readSecret)

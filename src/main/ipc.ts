@@ -67,10 +67,10 @@ export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealS
   })
   handle(IPC.requestSend, (_event, input): Promise<RunResult> | RunResult => {
     const candidate = input as Partial<RunInput> | undefined
-    if (!candidate || typeof candidate.endpointId !== 'string' || (candidate.draft !== undefined && !isDraft(candidate.draft))) {
+    if (!candidate || typeof candidate.endpointId !== 'string' || (candidate.projectId !== undefined && typeof candidate.projectId !== 'string') || (candidate.draft !== undefined && !isDraft(candidate.draft))) {
       return { ok: false, error: 'The request is invalid.', unresolved: [] }
     }
-    return runRequest({ endpointId: candidate.endpointId, draft: candidate.draft })
+    return runRequest({ projectId: candidate.projectId, endpointId: candidate.endpointId, draft: candidate.draft })
   })
   handle(IPC.secretReveal, (_event, variableId) => typeof variableId === 'string' && variableId.length < 200 ? revealSecret(variableId) : null)
   handle(IPC.importCancel, () => importer.cancel())

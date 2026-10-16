@@ -20,17 +20,28 @@ export class StaleRevisionError extends Error {
 
 export function isWorkspace(value: unknown): value is Workspace {
   if (!value || typeof value !== 'object') return false
-  const workspace = value as Partial<Workspace>
-  return workspace.version === 1 && typeof workspace.revision === 'number' && typeof workspace.activeProjectId === 'string' &&
+  const workspace = value as Partial<Omit<Workspace, 'version'>> & { version?: unknown }
+  return (workspace.version === 1 || workspace.version === WORKSPACE_VERSION) && typeof workspace.revision === 'number' && typeof workspace.activeProjectId === 'string' &&
     Array.isArray(workspace.projects) && workspace.projects.length > 0 &&
     workspace.projects.every(project => !!project && typeof project.id === 'string' && typeof project.name === 'string' &&
       Array.isArray(project.folders) && Array.isArray(project.endpoints) && Array.isArray(project.resources) && Array.isArray(project.importSources))
 }
 
-/** Fills fields added by later versions so older workspace files keep loading. */
-export function normalizeWorkspace(workspace: Workspace): Workspace {
+export const WORKSPACE_VERSION = 2
+
+/**
+ * Migrates any supported file version to the current one, filling fields
+ * added later. Nothing is removed. v1 → v2: the project layer becomes
+ * user-visible (unlimited projects); data shape is a superset of v1.
+ */
+export function normalizeWorkspace(workspace: Workspace | (Omit<Workspace, 'version'> & { version: number })): Workspace {
+  const activeProjectId = workspace.projects.some(project => project.id === workspace.activeProjectId)
+    ? workspace.activeProjectId
+    : workspace.projects[0].id
   return {
     ...workspace,
+    version: WORKSPACE_VERSION,
+    activeProjectId,
     projects: workspace.projects.map(project => ({
       ...project,
       environments: Array.isArray(project.environments) ? project.environments : [],
