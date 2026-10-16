@@ -136,7 +136,7 @@ describe('Swagger 2.0 conversion', () => {
 })
 
 describe('import planning', () => {
-  const emptyProject = (): Project => ({ id: 'p', name: 'Garden', folders: [], endpoints: [], resources: [], importSources: [] })
+  const emptyProject = (): Project => ({ id: 'p', name: 'Garden', folders: [], endpoints: [], resources: [], importSources: [], environments: [], activeEnvironmentId: null, globals: [] })
 
   it('maps first tags to nested folders and untagged operations to the root', async () => {
     const plan = planImport(emptyProject(), await garden(), fileOrigin, { grouping: 'tags', mode: 'merge', now: NOW })

@@ -6,6 +6,7 @@
 import type { ImportFailure } from '../importer/errors'
 import type { ImportedSpec, ImportOrigin } from '../importer/pipeline'
 import type { Workspace } from '../workspace/types'
+import type { RunInput, RunResult } from '../runner/run'
 
 export type ImportOutcome =
   | { ok: true; spec: ImportedSpec; origin: ImportOrigin }
@@ -27,6 +28,14 @@ export interface ReqoraApi {
     fromDroppedFile(file: File): Promise<ImportOutcome>
     fromUrl(url: string): Promise<ImportOutcome>
   }
+  request: {
+    /** Resolves variables (including decrypted secrets) and sends from the main process. */
+    send(input: RunInput): Promise<RunResult>
+  }
+  secrets: {
+    /** Decrypts one stored secret for display after an explicit user action. */
+    reveal(variableId: string): Promise<string | null>
+  }
 }
 
 export const IPC = {
@@ -34,7 +43,9 @@ export const IPC = {
   workspaceSave: 'reqora:workspace:save',
   importPick: 'reqora:import:pick-file',
   importPath: 'reqora:import:dropped-file',
-  importUrl: 'reqora:import:url'
+  importUrl: 'reqora:import:url',
+  requestSend: 'reqora:request:send',
+  secretReveal: 'reqora:secret:reveal'
 } as const
 
 declare global {

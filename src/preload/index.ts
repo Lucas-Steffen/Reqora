@@ -19,6 +19,12 @@ const api: ReqoraApi = {
       return ipcRenderer.invoke(IPC.importPath, path)
     },
     fromUrl: url => ipcRenderer.invoke(IPC.importUrl, url)
+  },
+  request: {
+    send: input => ipcRenderer.invoke(IPC.requestSend, input)
+  },
+  secrets: {
+    reveal: variableId => ipcRenderer.invoke(IPC.secretReveal, variableId)
   }
 }
 

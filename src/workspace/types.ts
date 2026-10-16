@@ -101,6 +101,32 @@ export interface ImportSource {
   importedAt: string
 }
 
+/**
+ * A variable in an environment or the project's globals. Secret values are
+ * never stored in the workspace file: the main process moves them into the
+ * encrypted secret store on save and blanks `value`.
+ */
+export interface Variable {
+  id: string
+  key: string
+  value: string
+  secret: boolean
+  enabled: boolean
+  description?: string
+  /** Set by the main process on load: an encrypted value exists for this secret. */
+  hasStoredSecret?: boolean
+  /** Transient: copy the encrypted value of another variable (environment duplication). */
+  copySecretFrom?: string
+}
+
+export interface Environment {
+  id: string
+  name: string
+  /** Prepended to relative endpoint paths. May contain {{variables}}. */
+  baseUrl: string
+  variables: Variable[]
+}
+
 export interface Project {
   id: string
   name: string
@@ -109,6 +135,11 @@ export interface Project {
   endpoints: Endpoint[]
   resources: Resource[]
   importSources: ImportSource[]
+  environments: Environment[]
+  /** null = "No environment". */
+  activeEnvironmentId: string | null
+  /** Project-wide variables; environment variables take precedence. */
+  globals: Variable[]
   /** Raw securitySchemes / securityDefinitions per source, mapped by the auth feature. */
   importedSecuritySchemes?: Record<string, Record<string, unknown>>
 }

@@ -25,54 +25,70 @@ export function defaultWorkspaceRepository(): WorkspaceRepository {
 export interface WorkspaceState {
   workspace: Workspace | null
   error: string
-  /** Applies a change and persists it. Updates are serialized; the latest saved state wins. */
+  /**
+   * Applies a change to the latest local state immediately and persists it.
+   * Saves are serialized and coalesced (each save writes the newest state).
+   */
   update(change: (workspace: Workspace) => Workspace): Promise<Workspace>
   /** Replace local state with a workspace already saved elsewhere (e.g. by the main process). */
   replace(workspace: Workspace): void
+  /** Resolves when every pending save has finished. */
+  flush(): Promise<void>
 }
 
 export function useWorkspace(repository: WorkspaceRepository): WorkspaceState {
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [error, setError] = useState('')
-  const latest = useRef<Workspace | null>(null)
+  /** Last state confirmed by the repository. */
+  const saved = useRef<Workspace | null>(null)
+  /** Latest local state, including unsaved edits. */
+  const view = useRef<Workspace | null>(null)
   const queue = useRef<Promise<unknown>>(Promise.resolve())
 
   useEffect(() => {
     let disposed = false
     repository.load().then(loaded => {
       if (disposed) return
-      latest.current = loaded
+      saved.current = view.current = loaded
       setWorkspace(loaded)
     }).catch(() => { if (!disposed) setError('The workspace could not be loaded. Please restart Reqora.') })
     return () => { disposed = true }
   }, [repository])
 
   const update = useCallback((change: (workspace: Workspace) => Workspace) => {
+    if (!view.current || !saved.current) return Promise.reject(new Error('The workspace is still loading.'))
+    view.current = change(view.current)
+    setWorkspace(view.current)
     const run = queue.current.then(async () => {
-      if (!latest.current) throw new Error('The workspace is still loading.')
-      const optimistic = change(latest.current)
-      setWorkspace(optimistic)
+      const source = view.current!
+      if (source === saved.current) return saved.current
       try {
-        const saved = await repository.save(optimistic)
-        latest.current = saved
-        setWorkspace(saved)
+        const result = await repository.save({ ...source, revision: saved.current!.revision })
+        saved.current = result
+        // Adopt the stored form (e.g. blanked secrets) unless newer edits exist.
+        if (view.current === source) {
+          view.current = result
+          setWorkspace(result)
+        }
         setError('')
-        return saved
+        return result
       } catch (reason) {
-        setWorkspace(latest.current)
-        const message = reason instanceof Error ? reason.message : 'The change could not be saved.'
-        setError(message)
+        view.current = saved.current
+        setWorkspace(saved.current)
+        setError(reason instanceof Error ? reason.message : 'The change could not be saved.')
         throw reason
       }
     })
     queue.current = run.catch(() => undefined)
-    return run
+    return run as Promise<Workspace>
   }, [repository])
 
   const replace = useCallback((next: Workspace) => {
-    latest.current = next
+    saved.current = view.current = next
     setWorkspace(next)
   }, [])
 
-  return { workspace, error, update, replace }
+  const flush = useCallback(async () => { await queue.current }, [])
+
+  return { workspace, error, update, replace, flush }
 }

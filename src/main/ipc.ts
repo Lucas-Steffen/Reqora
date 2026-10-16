@@ -3,10 +3,14 @@ import { IPC, type ImportOutcome, type SaveOutcome } from '../shared/api'
 import { StaleRevisionError, type WorkspaceRepository } from '../workspace/repository'
 import type { Workspace } from '../workspace/types'
 import type { createImportService } from './importService'
+import type { RunInput, RunResult } from '../runner/run'
+import type { RequestDraft } from '../runner/prepare'
 
 export interface IpcDependencies {
   store: WorkspaceRepository
   importer: ReturnType<typeof createImportService>
+  runRequest: (input: RunInput) => Promise<RunResult>
+  revealSecret: (variableId: string) => Promise<string | null>
   /** Returns true when the frame URL is this app's own renderer. */
   isTrustedUrl: (url: string) => boolean
 }
@@ -22,7 +26,14 @@ export function guarded(isTrustedUrl: (url: string) => boolean, handler: Handler
   }
 }
 
-export function registerIpc({ store, importer, isTrustedUrl }: IpcDependencies): void {
+function isDraft(value: unknown): value is RequestDraft {
+  if (!value || typeof value !== 'object') return false
+  const draft = value as Partial<RequestDraft>
+  return typeof draft.method === 'string' && typeof draft.url === 'string' && Array.isArray(draft.query) &&
+    Array.isArray(draft.headers) && Array.isArray(draft.pathParams) && Array.isArray(draft.cookies) && !!draft.body && typeof draft.body === 'object'
+}
+
+export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealSecret }: IpcDependencies): void {
   const handle = (channel: string, handler: Handler) => ipcMain.handle(channel, guarded(isTrustedUrl, handler))
 
   handle(IPC.workspaceLoad, () => store.load())
@@ -53,6 +64,14 @@ export function registerIpc({ store, importer, isTrustedUrl }: IpcDependencies):
     }
     return importer.fromPath(path)
   })
+  handle(IPC.requestSend, (_event, input): Promise<RunResult> | RunResult => {
+    const candidate = input as Partial<RunInput> | undefined
+    if (!candidate || typeof candidate.endpointId !== 'string' || (candidate.draft !== undefined && !isDraft(candidate.draft))) {
+      return { ok: false, error: 'The request is invalid.', unresolved: [] }
+    }
+    return runRequest({ endpointId: candidate.endpointId, draft: candidate.draft })
+  })
+  handle(IPC.secretReveal, (_event, variableId) => typeof variableId === 'string' && variableId.length < 200 ? revealSecret(variableId) : null)
   handle(IPC.importUrl, (_event, url) => {
     if (typeof url !== 'string' || url.length > 8192) {
       return { ok: false, error: { code: 'INVALID_URL', message: 'Enter a valid URL.' } } satisfies ImportOutcome

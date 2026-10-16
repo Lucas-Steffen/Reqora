@@ -27,6 +27,19 @@ export function isWorkspace(value: unknown): value is Workspace {
       Array.isArray(project.folders) && Array.isArray(project.endpoints) && Array.isArray(project.resources) && Array.isArray(project.importSources))
 }
 
+/** Fills fields added by later versions so older workspace files keep loading. */
+export function normalizeWorkspace(workspace: Workspace): Workspace {
+  return {
+    ...workspace,
+    projects: workspace.projects.map(project => ({
+      ...project,
+      environments: Array.isArray(project.environments) ? project.environments : [],
+      activeEnvironmentId: typeof project.activeEnvironmentId === 'string' ? project.activeEnvironmentId : null,
+      globals: Array.isArray(project.globals) ? project.globals : []
+    }))
+  }
+}
+
 /** Applies the revision rule shared by every store. */
 export function nextRevision(current: Workspace, incoming: Workspace): Workspace {
   if (incoming.revision !== current.revision) throw new StaleRevisionError()

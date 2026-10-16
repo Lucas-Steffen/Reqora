@@ -77,7 +77,8 @@ function params(operation: ImportedOperation, location: 'query' | 'header' | 'pa
 /** Spec-derived fields only. User-owned fields (status, maintainer, later auth/scripts) are not set here. */
 function specFields(operation: ImportedOperation, spec: ImportedSpec) {
   return {
-    name: operation.summary ?? operation.operationId ?? `${operation.method} ${operation.path}`,
+    // Apidog's default order: summary, operationId, first description line, path; capped at 255.
+    name: (operation.summary ?? operation.operationId ?? operation.description?.split('\n')[0].trim() ?? operation.path).slice(0, 255),
     method: operation.method,
     path: operation.path,
     description: operation.description,

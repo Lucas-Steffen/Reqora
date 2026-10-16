@@ -1,9 +1,13 @@
-import { app, BrowserWindow, session } from "electron";
+import { app, BrowserWindow, safeStorage, session } from "electron";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createImportService } from "./importService";
 import { registerIpc } from "./ipc";
 import { createFileWorkspaceStore } from "./workspaceStore";
+import { createSecretStore } from "./secretStore";
+import { annotateSecrets, extractSecrets } from "./secretVariables";
+import { SEND_LIMITS, sendHttp } from "./http/sendRequest";
+import { runRequest } from "../runner/run";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const rendererFile = join(directory, "../renderer/index.html");
@@ -50,10 +54,30 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, _permission, callback) => callback(false),
   );
+  const userData = app.getPath("userData");
+  // Secrets are encrypted with the OS keychain (DPAPI/Keychain/libsecret).
+  const secrets = createSecretStore(userData, safeStorage);
+  const store = createFileWorkspaceStore(userData, {
+    beforePersist: (workspace) => extractSecrets(workspace, secrets),
+    afterLoad: (workspace) => annotateSecrets(workspace, secrets),
+  });
+  const isSecretVariable = async (variableId: string) =>
+    (await store.load()).projects.some((project) =>
+      [...project.globals, ...project.environments.flatMap((environment) => environment.variables)]
+        .some((variable) => variable.id === variableId && variable.secret),
+    );
   registerIpc({
-    store: createFileWorkspaceStore(app.getPath("userData")),
+    store,
     importer: createImportService(),
     isTrustedUrl,
+    runRequest: async (input) =>
+      runRequest(input, {
+        workspace: await store.load(),
+        readSecret: (variable) => secrets.get(variable.id),
+        send: (request) => sendHttp(request, SEND_LIMITS),
+      }),
+    revealSecret: async (variableId) =>
+      (await isSecretVariable(variableId)) ? ((await secrets.get(variableId)) ?? null) : null,
   });
   createWindow();
   app.on("activate", () => {

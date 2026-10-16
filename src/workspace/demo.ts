@@ -35,7 +35,21 @@ export function createDemoProject(): Project {
       .map(record => ({ id: record.id, name: record.name, parentId: folderId(record.parentId), description: record.description })),
     endpoints,
     resources,
-    importSources: []
+    importSources: [],
+    // Synthetic environments on reserved .test hosts; nothing real is contacted.
+    environments: [
+      { id: 'env_local', name: 'Local', baseUrl: 'http://127.0.0.1:4010', variables: [
+        { id: 'var_local_user', key: 'userId', value: 'usr_01', secret: false, enabled: true }
+      ] },
+      { id: 'env_staging', name: 'Staging', baseUrl: 'https://staging.commerce.test', variables: [
+        { id: 'var_staging_user', key: 'userId', value: 'usr_staging', secret: false, enabled: true }
+      ] },
+      { id: 'env_production', name: 'Production', baseUrl: 'https://api.commerce.test', variables: [] }
+    ],
+    activeEnvironmentId: 'env_local',
+    globals: [
+      { id: 'var_global_page', key: 'pageSize', value: '20', secret: false, enabled: true, description: 'Default page size' }
+    ]
   }
 }
 
