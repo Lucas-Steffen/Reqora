@@ -590,7 +590,9 @@ textarea.code-input {
   flex: 1;
 }
 .project-switcher select {
+  width: 100%;
   max-width: 100%;
+  text-overflow: ellipsis;
   padding: 2px 4px;
   border: 1px solid transparent;
   border-radius: 5px;
