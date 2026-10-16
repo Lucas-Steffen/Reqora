@@ -1,0 +1,14 @@
+{
+  "target": "Reqora (not Apidog)",
+  "command": "pnpm build && pnpm smoke:electron sending",
+  "outcome": "passed",
+  "checks": [
+    "Imported a URL spec whose relative server (\"/pets-api/v1\") resolves against the document URL",
+    "List pets was sent by main to the spec server (not the active \"Local\" environment) and shows status, time, size and headers",
+    "A missing path parameter is reported before sending; once filled, /pets/42 is sent",
+    "Create pet sent the JSON example body and shows the formatted response body",
+    "An unresolvable .invalid host (RFC 6761, never reachable) yields a classified DNS error",
+    "No renderer page errors observed during the scenario"
+  ],
+  "rendererErrors": []
+}

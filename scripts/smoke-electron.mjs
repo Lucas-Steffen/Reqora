@@ -8,13 +8,15 @@ import { join, resolve } from 'node:path'
 import { searchScenario } from './smoke/search.mjs'
 import { importRoutes, importScenario } from './smoke/import.mjs'
 import { echoRoutes, environmentsScenario } from './smoke/environments.mjs'
+import { sendingRoutes, sendingScenario } from './smoke/sending.mjs'
 
 /**
  * Launches the built Electron app with a hidden window and a throwaway
  * profile, then runs the requested scenarios (default: all). All network
  * traffic goes to a loopback server started here; nothing leaves the machine.
  */
-const scenarios = { search: searchScenario, import: importScenario, environments: environmentsScenario }
+const scenarios = { search: searchScenario, import: importScenario, environments: environmentsScenario, sending: sendingScenario }
+const evidenceDirectories = { sending: 'docs/request-sending/evidence' }
 const selected = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(scenarios)
 
 const workDir = await mkdtemp(join(tmpdir(), 'reqora-smoke-'))
@@ -23,11 +25,13 @@ const env = { ...process.env, REQORA_SMOKE_TEST: '1' }
 delete env.ELECTRON_RUN_AS_NODE
 
 const echoHits = []
+const sendingHits = []
 const fixtures = resolve('src/importer/__fixtures__')
 const routes = {
   ...importRoutes({ garden: await readFile(join(fixtures, 'garden.yaml'), 'utf8'), common: await readFile(join(fixtures, 'common.yaml'), 'utf8') }),
   '/hang': { hang: true },
-  ...echoRoutes(echoHits)
+  ...echoRoutes(echoHits),
+  ...sendingRoutes(sendingHits)
 }
 const hits = []
 const server = createServer((request, response) => {
@@ -47,7 +51,7 @@ const server = createServer((request, response) => {
   response.end(route.body)
 })
 await new Promise(done => server.listen(0, '127.0.0.1', done))
-const serverInfo = { url: `http://127.0.0.1:${server.address().port}`, hits, echoHits, routes }
+const serverInfo = { url: `http://127.0.0.1:${server.address().port}`, hits, echoHits, sendingHits, routes }
 
 let application
 let page
@@ -78,7 +82,7 @@ try {
     assert.deepEqual(failures, [], `Renderer page errors during ${name}`)
     checks.push('No renderer page errors observed during the scenario')
     results[name] = { outcome: 'passed', durationMs: Date.now() - started, checks }
-    const evidence = resolve(`docs/apidog-${name}/evidence/reqora-runtime`)
+    const evidence = resolve(evidenceDirectories[name] ?? `docs/apidog-${name}/evidence/reqora-runtime`)
     await mkdir(evidence, { recursive: true })
     await writeFile(join(evidence, 'smoke-result.json'), JSON.stringify({
       target: 'Reqora (not Apidog)', command: `pnpm build && pnpm smoke:electron ${name}`, outcome: 'passed', checks, rendererErrors: failures

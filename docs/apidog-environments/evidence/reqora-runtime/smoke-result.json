@@ -6,7 +6,7 @@
     "Created \"Loopback\" with a base URL and a secret; the value was encrypted by main and only shown after an explicit reveal",
     "Neither workspace.json nor secrets.json (safeStorage ciphertext) contains the secret in plain text (secrets.json, workspace.json)",
     "Send from main resolved {{apiKey}} and the base URL; loopback received the real secret; the UI shows only ••••••",
-    "Switching to \"No environment\" makes the relative URL fail with a clear message",
+    "Switching to \"No environment\" makes the relative URL of a manual endpoint fail with a clear \"no base URL\" message before sending",
     "No renderer page errors observed during the scenario"
   ],
   "rendererErrors": []

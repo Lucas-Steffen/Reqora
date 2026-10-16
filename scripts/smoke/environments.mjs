@@ -30,7 +30,7 @@ export async function environmentsScenario({ page, capture, check, server, workD
   const name = manager.getByRole('textbox', { name: 'Environment name' })
   await name.fill('Loopback')
   await name.press('Enter')
-  await manager.getByRole('textbox', { name: 'Base URL' }).fill(server.url)
+  await manager.getByRole('textbox', { name: 'Base URL', exact: true }).fill(server.url)
   await manager.getByRole('button', { name: 'Add variable' }).click()
   await manager.getByRole('textbox', { name: 'Variable name' }).last().fill('apiKey')
   await manager.getByRole('checkbox', { name: 'Secret apiKey' }).check()
@@ -76,7 +76,7 @@ export async function environmentsScenario({ page, capture, check, server, workD
 
   await page.getByRole('combobox', { name: 'Active environment' }).selectOption({ label: 'No environment' })
   await page.getByRole('button', { name: 'Send' }).click()
-  await page.getByRole('alert').getByText(/is not a complete URL/).waitFor()
-  check('Switching to "No environment" makes the relative URL fail with a clear message')
+  await page.getByRole('alert').getByText(/No environment selected and no server/).waitFor()
+  check('Switching to "No environment" makes the relative URL of a manual endpoint fail with a clear "no base URL" message before sending')
   await page.getByRole('combobox', { name: 'Active environment' }).selectOption({ label: 'Loopback' })
 }
