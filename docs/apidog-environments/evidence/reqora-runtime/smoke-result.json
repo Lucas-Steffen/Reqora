@@ -1,0 +1,13 @@
+{
+  "target": "Reqora (not Apidog)",
+  "command": "pnpm build && pnpm smoke:electron environments",
+  "outcome": "passed",
+  "checks": [
+    "Created \"Loopback\" with a base URL and a secret; the value was encrypted by main and only shown after an explicit reveal",
+    "Neither workspace.json nor secrets.json (safeStorage ciphertext) contains the secret in plain text (secrets.json, workspace.json)",
+    "Send from main resolved {{apiKey}} and the base URL; loopback received the real secret; the UI shows only ••••••",
+    "Switching to \"No environment\" makes the relative URL fail with a clear message",
+    "No renderer page errors observed during the scenario"
+  ],
+  "rendererErrors": []
+}
