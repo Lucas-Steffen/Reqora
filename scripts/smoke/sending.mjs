@@ -39,12 +39,15 @@ export async function sendingScenario({ page, capture, check, server }) {
   const evidence = 'docs/request-sending/evidence'
   const hits = server.sendingHits
   const dialog = page.getByRole('dialog', { name: 'Import OpenAPI / Swagger' })
+  await page.getByRole('combobox', { name: 'Active project' }).selectOption({ label: 'Commerce API' })
   await page.getByRole('combobox', { name: 'Active environment' }).selectOption({ label: 'Local' })
   await page.getByRole('button', { name: 'Import OpenAPI / Swagger', exact: true }).click()
   await dialog.getByRole('tab', { name: 'URL' }).click()
   await dialog.getByLabel('Document URL').fill(`${server.url}/pets-api/openapi.json`)
   await dialog.getByRole('button', { name: 'Fetch' }).click()
   await dialog.getByText(`${server.url}/pets-api/v1`).waitFor()
+  // Into the current project, where the unrelated "Local" environment is active (the original bug setup).
+  await dialog.getByRole('radio', { name: /Current project “Commerce API”/ }).check()
   await dialog.getByRole('button', { name: 'Import 3 endpoints' }).click()
   await page.getByText('Imported 3 endpoints from Mock Pets.').waitFor()
   check('Imported a URL spec whose relative server ("/pets-api/v1") resolves against the document URL')

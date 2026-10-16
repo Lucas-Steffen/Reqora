@@ -9,14 +9,15 @@ import { searchScenario } from './smoke/search.mjs'
 import { importRoutes, importScenario } from './smoke/import.mjs'
 import { echoRoutes, environmentsScenario } from './smoke/environments.mjs'
 import { sendingRoutes, sendingScenario } from './smoke/sending.mjs'
+import { projectsScenario } from './smoke/projects.mjs'
 
 /**
  * Launches the built Electron app with a hidden window and a throwaway
  * profile, then runs the requested scenarios (default: all). All network
  * traffic goes to a loopback server started here; nothing leaves the machine.
  */
-const scenarios = { search: searchScenario, import: importScenario, environments: environmentsScenario, sending: sendingScenario }
-const evidenceDirectories = { sending: 'docs/request-sending/evidence' }
+const scenarios = { search: searchScenario, import: importScenario, environments: environmentsScenario, sending: sendingScenario, projects: projectsScenario }
+const evidenceDirectories = { sending: 'docs/request-sending/evidence', projects: 'docs/projects/evidence' }
 const selected = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(scenarios)
 
 const workDir = await mkdtemp(join(tmpdir(), 'reqora-smoke-'))
@@ -53,18 +54,20 @@ const server = createServer((request, response) => {
 await new Promise(done => server.listen(0, '127.0.0.1', done))
 const serverInfo = { url: `http://127.0.0.1:${server.address().port}`, hits, echoHits, sendingHits, routes }
 
-let application
-let page
 const failures = []
 const results = {}
-try {
-  application = await electronTest.launch({
+const instances = []
+
+/** Launches the built app on a profile directory; renderer errors are collected. */
+async function launch(profileDirectory) {
+  const application = await electronTest.launch({
     executablePath: electronPath,
-    args: ['.', `--user-data-dir=${profile}`],
+    args: ['.', `--user-data-dir=${profileDirectory}`],
     env,
     timeout: 30000
   })
-  page = await application.firstWindow()
+  instances.push(application)
+  const page = await application.firstWindow()
   page.on('pageerror', error => failures.push(error.message))
   async function capture(directory, name) {
     await mkdir(resolve(directory), { recursive: true })
@@ -75,10 +78,15 @@ try {
     })
     await writeFile(join(resolve(directory), name), Buffer.from(base64, 'base64'))
   }
+  return { application, page, capture, close: () => application.close() }
+}
+
+try {
+  const { application, page, capture } = await launch(profile)
   for (const name of selected) {
     const checks = []
     const started = Date.now()
-    await scenarios[name]({ application, page, capture, check: label => checks.push(label), server: serverInfo, workDir })
+    await scenarios[name]({ application, page, capture, launch, check: label => checks.push(label), server: serverInfo, workDir })
     assert.deepEqual(failures, [], `Renderer page errors during ${name}`)
     checks.push('No renderer page errors observed during the scenario')
     results[name] = { outcome: 'passed', durationMs: Date.now() - started, checks }
@@ -90,7 +98,7 @@ try {
   }
   console.log(JSON.stringify(results, null, 2))
 } finally {
-  await application?.close()
+  for (const instance of instances) await instance.close().catch(() => undefined)
   server.closeAllConnections()
   server.close()
   // Only remove the fresh, owned smoke-test directory after Electron exits.

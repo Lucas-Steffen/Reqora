@@ -1,0 +1,13 @@
+{
+  "target": "Reqora (not Apidog)",
+  "command": "pnpm build && pnpm smoke:electron projects",
+  "outcome": "passed",
+  "checks": [
+    "A version-1 single-project workspace opens with all its folders and endpoints",
+    "Created 6 projects (more than Apidog's 5-project import limit), renamed, duplicated and deleted through the Projects dialog",
+    "Search runs in the active project only; \"All projects\" finds the endpoint in both projects and opening it switches project",
+    "After reload all 7 projects persist; workspace.json is version 2 and workspace.v1.backup.json holds the original bytes",
+    "No renderer page errors observed during the scenario"
+  ],
+  "rendererErrors": []
+}

@@ -58,7 +58,7 @@ The Request tab shows which rule applied and the resulting base URL.
   Each message names the host.
 - The response shows status, time, size, headers and body (formatted when it is JSON).
 
-**Tests.** Local mock servers only: the loopback HTTP server, the loopback TLS server with a self-signed certificate, and an unresolvable `.invalid` host for DNS errors. Nothing third-party.
+**Tests.** Local mock servers only: a loopback HTTP mock, a closed port and a hanging server. DNS and TLS failures use injected Node error codes. Nothing third-party is contacted.
 
 ## Validation
 

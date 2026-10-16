@@ -25,6 +25,7 @@ export function echoRoutes(hits) {
 export async function environmentsScenario({ page, capture, check, server, workDir }) {
   const evidence = 'docs/apidog-environments/evidence/reqora-runtime'
   const manager = page.getByRole('dialog', { name: 'Environments' })
+  await page.getByRole('combobox', { name: 'Active project' }).selectOption({ label: 'Commerce API' })
   await page.getByRole('button', { name: 'Manage environments' }).click()
   await manager.getByRole('button', { name: 'New environment' }).click()
   const name = manager.getByRole('textbox', { name: 'Environment name' })
