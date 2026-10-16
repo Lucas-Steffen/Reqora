@@ -30,6 +30,11 @@ beforeAll(async () => {
       case '/big-declared': response.writeHead(200, { 'content-length': String(100) }); response.end('x'.repeat(100)); break
       case '/big-chunked': response.writeHead(200); for (let i = 0; i < 20; i++) response.write('y'.repeat(10)); response.end(); break
       case '/missing': response.writeHead(404, 'Not Found'); response.end(); break
+      // "localhost" is a different origin from "127.0.0.1" even on the same port.
+      case '/cross-origin.json': response.end(JSON.stringify({ openapi: '3.0.0', info: { title: 'x' }, paths: {}, components: { schemas: { A: { $ref: `http://localhost:${url.port || (server.address() as AddressInfo).port}/common.yaml#/components/schemas/Error` } } } }))
+        break
+      case '/slow-ref.json': response.end(JSON.stringify({ openapi: '3.0.0', info: { title: 'x' }, paths: {}, components: { schemas: { A: { $ref: '/slow' } } } }))
+        break
       default: response.writeHead(500); response.end()
     }
   })
@@ -95,7 +100,8 @@ describe('import service', () => {
     const outcome = await service().fromPath(join(directory, 'api', 'garden.yaml'))
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
-    expect(outcome.origin).toEqual({ kind: 'file', location: 'garden.yaml' })
+    expect(outcome.origin).toMatchObject({ kind: 'file', location: 'garden.yaml' })
+    expect(outcome.origin.identity).toMatch(/garden.yaml$/)
     expect(outcome.spec.warnings.filter(warning => warning.includes('External'))).toEqual([])
   })
 
@@ -123,6 +129,45 @@ describe('import service', () => {
   it('returns structured failures for URL errors', async () => {
     expect(await service().fromUrl(`${base}/missing`)).toMatchObject({ ok: false, error: { code: 'HTTP_STATUS' } })
     expect(await service().fromUrl('file:///c:/x.yaml')).toMatchObject({ ok: false, error: { code: 'UNSUPPORTED_SCHEME' } })
+    expect(await service().fromUrl(`http://user:secret@127.0.0.1:1/spec.json`)).toMatchObject({ ok: false, error: { code: 'INVALID_URL' } })
+  })
+
+  // Review findings (import gate).
+  it('rejects network-share references before any filesystem access', async () => {
+    const unc = join(directory, 'api', 'unc.yaml')
+    await writeFile(unc, oas3Yaml.replace('./common.yaml', '//attacker.test/share/x.yaml'))
+    const outcome = await service().fromPath(unc)
+    expect(outcome.ok && outcome.spec.warnings).toContain('External reference x.yaml was not resolved: network-share references are not allowed')
+    expect(await service().fromPath('\\\\attacker.test\\share\\spec.yaml')).toMatchObject({ ok: false, error: { code: 'FILE' } })
+  })
+
+  it('does not fetch remote references from local files', async () => {
+    const remote = join(directory, 'api', 'remote.yaml')
+    await writeFile(remote, oas3Yaml.replace('./common.yaml', `${base}/common.yaml`))
+    const outcome = await service().fromPath(remote)
+    expect(outcome.ok && outcome.spec.warnings.some(warning => warning.includes('remote references are not followed for local files'))).toBe(true)
+  })
+
+  it('follows only same-origin references for URL documents', async () => {
+    const outcome = await service().fromUrl(`${base}/cross-origin.json`)
+    expect(outcome.ok && outcome.spec.warnings[0]).toContain('only references on the same origin as the document are followed')
+  })
+
+  it('applies one deadline to the whole import, and can be canceled', async () => {
+    const slow = createImportService({ fetchOptions: { timeoutMs: 5000 }, deadlineMs: 300 })
+    expect(await slow.fromUrl(`${base}/slow-ref.json`)).toMatchObject({ ok: false, error: { code: 'TIMEOUT', message: 'The import did not finish within 0.3 seconds.' } })
+    const cancelable = service()
+    const pending = cancelable.fromUrl(`${base}/slow`)
+    setTimeout(() => cancelable.cancel(), 50)
+    expect(await pending).toMatchObject({ ok: false, error: { code: 'CANCELED' } })
+  })
+
+  it('keeps sources with the same file name in different folders apart', async () => {
+    await mkdir(join(directory, 'other'))
+    await writeFile(join(directory, 'other', 'garden.yaml'), oas3Yaml)
+    const a = await service().fromPath(join(directory, 'api', 'garden.yaml'))
+    const b = await service().fromPath(join(directory, 'other', 'garden.yaml'))
+    expect(a.ok && b.ok && a.origin.location === b.origin.location && a.origin.identity !== b.origin.identity).toBe(true)
   })
 })
 
@@ -140,6 +185,18 @@ describe('file workspace store', () => {
       const reopened = await createFileWorkspaceStore(directory).load()
       expect(reopened.projects[0].name).toBe('Renamed')
       expect(JSON.parse(await readFile(join(directory, 'workspace.json'), 'utf8')).revision).toBe(1)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('fails to load (instead of seeding the demo) when the file exists but cannot be read', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'reqora-store-'))
+    try {
+      await mkdir(join(directory, 'workspace.json')) // EISDIR stands in for a locked file
+      const store = createFileWorkspaceStore(directory)
+      await expect(store.load()).rejects.toThrow('could not be read')
+      await expect(store.save(createDemoWorkspace())).rejects.toThrow('could not be read')
     } finally {
       await rm(directory, { recursive: true, force: true })
     }

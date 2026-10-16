@@ -227,3 +227,58 @@ describe('import planning', () => {
     expect(again.counts).toMatchObject({ added: 0, updated: 0, unchanged: 5, removed: 0 })
   })
 })
+
+describe('review regressions (import gate)', () => {
+  const emptyProject = (): Project => ({ id: 'p', name: 'Garden', folders: [], endpoints: [], resources: [], importSources: [], environments: [], activeEnvironmentId: null, globals: [] })
+  const doc = (paths: object, schemas: object = {}, tags?: object[]) =>
+    JSON.stringify({ openapi: '3.0.0', info: { title: 'T' }, ...(tags ? { tags } : {}), paths, components: { schemas } })
+
+  it('stops exponential $ref fan-out with a LIMIT error instead of freezing', async () => {
+    const schemas: Record<string, object> = {}
+    for (let level = 0; level < 20; level++) {
+      schemas[`L${level}`] = level === 19 ? { type: 'string' } : { type: 'object', properties: { a: { $ref: `#/components/schemas/L${level + 1}` }, b: { $ref: `#/components/schemas/L${level + 1}` } } }
+    }
+    const paths = Object.fromEntries(Array.from({ length: 300 }, (_, i) => [`/p${i}`, { get: { responses: { 200: { description: 'ok', content: { 'application/json': { schema: { $ref: '#/components/schemas/L0' } } } } } } }]))
+    const started = Date.now()
+    await expect(importDocument(doc(paths, schemas), ROOT, loader)).rejects.toMatchObject({ code: 'LIMIT' })
+    expect(Date.now() - started).toBeLessThan(5000)
+  })
+
+  it('never echoes document text in JSON parse errors', () => {
+    expect(() => parseDocument('{"password": "hunter2", oops}')).toThrow(/^The document is not valid JSON \(character \d+\)\.$/)
+  })
+
+  it('keeps a tag named "Schemas" apart from the schemas folder', async () => {
+    const spec = await importDocument(doc({ '/a': { get: { tags: ['Schemas'], responses: {} } } }, { S: { type: 'string' } }), ROOT, loader)
+    const { project } = planImport(emptyProject(), spec, fileOrigin, { grouping: 'tags', mode: 'merge', now: NOW })
+    expect(project.folders).toHaveLength(2)
+    expect(new Set(project.folders.map(folder => folder.id)).size).toBe(2)
+  })
+
+  it('names endpoints from the first non-blank description line, then the path', async () => {
+    const spec = await importDocument(doc({ '/a': { get: { description: '\n\n  Lists things  \nmore', responses: {} } }, '/b': { get: { responses: {} } } }), ROOT, loader)
+    const { project } = planImport(emptyProject(), spec, fileOrigin, { grouping: 'tags', mode: 'merge', now: NOW })
+    expect(project.endpoints.map(endpoint => endpoint.name)).toEqual(['Lists things', '/b'])
+  })
+
+  it('merge keeps an endpoint the user moved into their own folder, and marks newly deprecated ones', async () => {
+    const first = planImport(emptyProject(), await garden(), fileOrigin, { grouping: 'tags', mode: 'merge', now: NOW }).project
+    const moved: Project = {
+      ...first,
+      folders: [...first.folders, { id: 'mine', name: 'Mine' }],
+      endpoints: first.endpoints.map(endpoint => endpoint.path === '/health' ? { ...endpoint, folderId: 'mine' } : endpoint)
+    }
+    const next = await importDocument(oas3Yaml.replace('operationId: health', 'operationId: health\n      deprecated: true'), ROOT, loader)
+    const plan = planImport(moved, next, fileOrigin, { grouping: 'tags', mode: 'merge', now: NOW })
+    expect(plan.project.endpoints.find(endpoint => endpoint.path === '/health')).toMatchObject({ folderId: 'mine', status: 'Deprecated' })
+  })
+
+  it('identifies sources by canonical identity, not just the displayed file name', async () => {
+    const a = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:\billing\openapi.yaml' })
+    const b = sourceIdFor({ kind: 'file', location: 'openapi.yaml', identity: 'C:\users\openapi.yaml' })
+    const c = sourceIdFor({ kind: 'url', location: 'https://x.test/spec?…', identity: 'https://x.test/spec?service=a' })
+    const d = sourceIdFor({ kind: 'url', location: 'https://x.test/spec?…', identity: 'https://x.test/spec?service=b' })
+    expect(new Set([a, b, c, d]).size).toBe(4)
+    expect(a).toMatch(/^src_[0-9a-z]{14}$/)
+  })
+})

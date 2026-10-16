@@ -23,6 +23,7 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
   const [tab, setTab] = useState<'file' | 'url'>('file')
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
+  const [committing, setCommitting] = useState(false)
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [grouping, setGrouping] = useState<ImportGrouping>('tags')
@@ -63,28 +64,41 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
     // Only for the file present when the dialog opened.
   }, [])
 
+  /** Closing while a document loads cancels it in the main process; a commit cannot be interrupted. */
+  function close(): void {
+    if (committing) return
+    if (busy) {
+      requestId.current++
+      void gateway.cancel?.()
+    }
+    onCancel()
+  }
+
   function onDrop(event: DragEvent): void {
     event.preventDefault()
     event.stopPropagation()
     setDragging(false)
+    // A drop never replaces a document under review or being loaded/committed.
+    if (busy || committing || plan) return
     const file = event.dataTransfer.files[0]
     if (file) void run(() => gateway.fromDroppedFile(file))
   }
 
   async function commit(): Promise<void> {
-    if (!plan) return
-    setBusy(true)
+    if (!plan || committing) return
+    requestId.current++
+    setCommitting(true)
     try {
       const verb = plan.isReimport ? (plan.mode === 'merge' ? 'Merged' : 'Overwrote with') : 'Imported'
       await onCommit(plan.project, `${verb} ${plan.counts.endpoints} endpoints from ${plan.source.title}.`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'The import could not be saved.')
-      setBusy(false)
+      setCommitting(false)
     }
   }
 
   return (
-    <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onCancel() }}>
+    <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
       <div
         className="modal import-dialog"
         role="dialog"
@@ -92,7 +106,7 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
         aria-labelledby="import-title"
         tabIndex={-1}
         ref={dialogRef}
-        onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); if (!busy) onCancel() } }}
+        onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); close() } }}
         onDragOver={event => { event.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -102,7 +116,7 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
             <h2 id="import-title">Import OpenAPI / Swagger</h2>
             <p>OpenAPI 3.x or Swagger 2.0, as JSON or YAML.</p>
           </div>
-          <button className="icon-button" aria-label="Close import" onClick={onCancel} disabled={busy}><X size={17} /></button>
+          <button className="icon-button" aria-label="Close import" onClick={close} disabled={committing}><X size={17} /></button>
         </header>
 
         {!plan ? (
@@ -198,11 +212,11 @@ export default function ImportDialog({ project, gateway, initialFile, onCancel, 
         )}
 
         <footer className="modal-footer">
-          {plan && <button className="secondary-button" onClick={() => { setLoaded(null); setMode('merge'); setDeleteUnmatched(false) }} disabled={busy}>Back</button>}
+          {plan && <button className="secondary-button" onClick={() => { setLoaded(null); setMode('merge'); setDeleteUnmatched(false) }} disabled={committing}>Back</button>}
           <span className="spacer" />
-          <button className="secondary-button" onClick={onCancel} disabled={busy}>Cancel</button>
+          <button className="secondary-button" onClick={close} disabled={committing}>Cancel</button>
           {plan && (
-            <button className="primary-button" onClick={() => void commit()} disabled={busy}>
+            <button className="primary-button" onClick={() => void commit()} disabled={committing}>
               {plan.isReimport ? (mode === 'merge' ? 'Merge import' : 'Overwrite import') : `Import ${plan.counts.endpoints} endpoints`}
             </button>
           )}
