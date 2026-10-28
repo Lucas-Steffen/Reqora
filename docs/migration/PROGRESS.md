@@ -73,7 +73,7 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 **Limitações**
 - A migração não foi exercitada sobre a cópia do perfil real de `%APPDATA%\reqora`; só nos testes.
 
-## 2026-10-28 — TASK-005: toolchain (BLOCKED) e adapter da TASK-006
+## 2026-10-28 — TASK-005: toolchain (DONE) e adapter da TASK-006
 
 **Feito**
 - Rust instalado via winget: rustup 1.29.1, rustc 1.99.1, cargo 1.99.1, toolchain `stable-x86_64-pc-windows-msvc`.
@@ -88,3 +88,13 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
   `winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"`
 - Duas novas tentativas (segundo plano e aba visível do terminal) também terminaram com 1602.
 - O resto da TASK-006 (scaffold, CSP/capabilities, build release) e a TASK-007 esperam esse passo.
+
+## 2026-10-28 — TASK-005: desbloqueio
+
+**Feito**
+- O usuário instalou o VS Build Tools 2022 num terminal de administrador: 17.14.37806.7, workload VCTools, MSVC 14.44.35207.
+
+**Evidências**
+- `link.exe` presente em `VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64`.
+- `cargo build` de um hello-world compilou, linkou e o executável imprimiu "Hello, world!".
+- A TASK-005 fica DONE; a TASK-006 segue com o scaffold.

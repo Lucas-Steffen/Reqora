@@ -8,7 +8,7 @@ Estados: `TODO`, `IN_PROGRESS`, `BLOCKED`, `REVIEW`, `DONE`. Uma TASK só fica `
 | [TASK-002](tasks/TASK-002.md) | A | Harness de benchmark e fixtures | Alta | TASK-001 | DONE |
 | [TASK-003](tasks/TASK-003.md) | A | Baseline Electron (build de produção) | Alta | TASK-002 | DONE |
 | [TASK-004](tasks/TASK-004.md) | A | Preferências e histórico de busca no backend | Média | TASK-003 | DONE |
-| [TASK-005](tasks/TASK-005.md) | B | Toolchain Rust e MSVC | Alta | TASK-004 | BLOCKED |
+| [TASK-005](tasks/TASK-005.md) | B | Toolchain Rust e MSVC | Alta | TASK-004 | DONE |
 | [TASK-006](tasks/TASK-006.md) | B | Scaffold de src-tauri | Alta | TASK-005 | IN_PROGRESS |
 | [TASK-007](tasks/TASK-007.md) | B | Gate de memória e ADR de go/no-go | Crítica | TASK-003, TASK-006 | TODO |
 | [TASK-008](tasks/TASK-008.md) | C | Camada IPC tipada (platform/) | Alta | TASK-007 | TODO |
