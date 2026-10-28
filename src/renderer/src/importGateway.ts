@@ -1,6 +1,7 @@
 import { ImportError, redactUrl, toImportFailure } from '../../importer/errors'
 import { importDocument } from '../../importer/pipeline'
 import type { ImportOutcome, ReqoraApi } from '../../shared/api'
+import { desktopApi } from './platform'
 
 export type ImportGateway = ReqoraApi['importer']
 
@@ -58,5 +59,5 @@ export function createBrowserImportGateway(fetchImpl: typeof fetch = (...args) =
 }
 
 export function defaultImportGateway(): ImportGateway {
-  return typeof window !== 'undefined' && window.reqora ? window.reqora.importer : createBrowserImportGateway()
+  return desktopApi()?.importer ?? createBrowserImportGateway()
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createMemoryWorkspaceRepository, StaleRevisionError, type WorkspaceRepository } from '../../workspace/repository'
 import type { Workspace } from '../../workspace/types'
 import type { ReqoraApi } from '../../shared/api'
+import { desktopApi } from './platform'
 
 /** Adapts the preload API to the replaceable repository interface. */
 export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepository {
@@ -17,9 +18,8 @@ export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepositor
 }
 
 export function defaultWorkspaceRepository(): WorkspaceRepository {
-  return typeof window !== 'undefined' && window.reqora
-    ? createIpcWorkspaceRepository(window.reqora)
-    : createMemoryWorkspaceRepository()
+  const api = desktopApi()
+  return api ? createIpcWorkspaceRepository(api) : createMemoryWorkspaceRepository()
 }
 
 export interface WorkspaceState {

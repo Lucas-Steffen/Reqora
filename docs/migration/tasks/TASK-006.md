@@ -4,7 +4,7 @@
 
 ## Status
 
-TODO
+IN_PROGRESS (só o adapter; o resto depende da TASK-005, bloqueada)
 
 ## Prioridade
 
@@ -28,7 +28,7 @@ Criar o projeto Tauri que carrega a UI atual, sem tocar no Electron.
 
 - [ ] Scaffold
 - [ ] Configuração de CSP e capabilities
-- [ ] Adapter memory
+- [x] Adapter memory (adiantado: é só TypeScript e não depende do toolchain)
 - [ ] Build release
 
 ## Critérios de aceite

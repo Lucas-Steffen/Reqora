@@ -1,6 +1,7 @@
 import { runRequest } from '../../runner/run'
 import type { ReqoraApi } from '../../shared/api'
 import type { Workspace } from '../../workspace/types'
+import { desktopApi } from './platform'
 
 export type RequestGateway = ReqoraApi['request'] & Partial<ReqoraApi['secrets']>
 
@@ -36,7 +37,6 @@ export function createBrowserRequestGateway(getWorkspace: () => Workspace | null
 }
 
 export function defaultRequestGateway(getWorkspace: () => Workspace | null): RequestGateway {
-  return typeof window !== 'undefined' && window.reqora
-    ? { ...window.reqora.request, reveal: window.reqora.secrets.reveal }
-    : createBrowserRequestGateway(getWorkspace)
+  const api = desktopApi()
+  return api ? { ...api.request, reveal: api.secrets.reveal } : createBrowserRequestGateway(getWorkspace)
 }

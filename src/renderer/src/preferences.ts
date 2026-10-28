@@ -6,6 +6,7 @@ import {
   type SearchOptions,
 } from "../../search";
 import type { ReqoraApi } from "../../shared/api";
+import { desktopApi } from "./platform";
 
 /** Pre-multi-project global history; migrated to the first active project. */
 export const HISTORY_KEY = "reqora.search.history.v1";
@@ -83,7 +84,7 @@ function browserPreferences(): Map<string, unknown> {
  * using browser storage for this session.
  */
 export async function initPreferences(
-  api: PreferencesApi | undefined = window.reqora?.preferences,
+  api: PreferencesApi | undefined = desktopApi()?.preferences,
 ): Promise<void> {
   if (!api) return;
   let snapshot;
