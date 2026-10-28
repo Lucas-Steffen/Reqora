@@ -1,0 +1,23 @@
+[package]
+name = "reqora"
+version = "0.1.0"
+description = "An API workspace with local project search"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "reqora_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
