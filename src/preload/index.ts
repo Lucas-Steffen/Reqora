@@ -26,6 +26,10 @@ const api: ReqoraApi = {
   },
   secrets: {
     reveal: variableId => ipcRenderer.invoke(IPC.secretReveal, variableId)
+  },
+  preferences: {
+    load: () => ipcRenderer.invoke(IPC.preferencesLoad),
+    save: values => ipcRenderer.invoke(IPC.preferencesSave, values)
   }
 }
 

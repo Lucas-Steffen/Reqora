@@ -5,12 +5,14 @@ import type { Workspace } from '../workspace/types'
 import type { createImportService } from './importService'
 import type { RunInput, RunResult } from '../runner/run'
 import type { RequestDraft } from '../runner/prepare'
+import type { PreferencesStore } from './preferencesStore'
 
 export interface IpcDependencies {
   store: WorkspaceRepository
   importer: ReturnType<typeof createImportService>
   runRequest: (input: RunInput) => Promise<RunResult>
   revealSecret: (variableId: string) => Promise<string | null>
+  preferences: PreferencesStore
   /** Returns true when the frame URL is this app's own renderer. */
   isTrustedUrl: (url: string) => boolean
 }
@@ -33,7 +35,7 @@ function isDraft(value: unknown): value is RequestDraft {
     Array.isArray(draft.headers) && Array.isArray(draft.pathParams) && Array.isArray(draft.cookies) && !!draft.body && typeof draft.body === 'object'
 }
 
-export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealSecret }: IpcDependencies): void {
+export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealSecret, preferences }: IpcDependencies): void {
   const handle = (channel: string, handler: Handler) => ipcMain.handle(channel, guarded(isTrustedUrl, handler))
 
   handle(IPC.workspaceLoad, () => store.load())
@@ -74,6 +76,8 @@ export function registerIpc({ store, importer, isTrustedUrl, runRequest, revealS
   })
   handle(IPC.secretReveal, (_event, variableId) => typeof variableId === 'string' && variableId.length < 200 ? revealSecret(variableId) : null)
   handle(IPC.importCancel, () => importer.cancel())
+  handle(IPC.preferencesLoad, () => preferences.load())
+  handle(IPC.preferencesSave, (_event, values) => preferences.save(values))
   handle(IPC.importUrl, (_event, url) => {
     if (typeof url !== 'string' || url.length > 8192) {
       return { ok: false, error: { code: 'INVALID_URL', message: 'Enter a valid URL.' } } satisfies ImportOutcome

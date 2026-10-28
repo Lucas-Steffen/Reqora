@@ -16,6 +16,12 @@ export type SaveOutcome =
   | { ok: true; workspace: Workspace }
   | { ok: false; code: 'STALE' | 'INVALID' | 'IO'; message: string }
 
+/** Persisted UI preferences; `initialized` is false until the first save. */
+export interface PreferencesSnapshot {
+  initialized: boolean
+  values: Record<string, unknown>
+}
+
 export interface ReqoraApi {
   workspace: {
     load(): Promise<Workspace>
@@ -38,6 +44,11 @@ export interface ReqoraApi {
     /** Decrypts one stored secret for display after an explicit user action. */
     reveal(variableId: string): Promise<string | null>
   }
+  /** Search options, scope and per-project history, stored next to the workspace. */
+  preferences?: {
+    load(): Promise<PreferencesSnapshot>
+    save(values: Record<string, unknown>): Promise<boolean>
+  }
 }
 
 export const IPC = {
@@ -48,7 +59,9 @@ export const IPC = {
   importUrl: 'reqora:import:url',
   importCancel: 'reqora:import:cancel',
   requestSend: 'reqora:request:send',
-  secretReveal: 'reqora:secret:reveal'
+  secretReveal: 'reqora:secret:reveal',
+  preferencesLoad: 'reqora:preferences:load',
+  preferencesSave: 'reqora:preferences:save'
 } as const
 
 declare global {

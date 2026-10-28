@@ -59,3 +59,16 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 **Limitações do ambiente**
 - O primeiro lançamento a frio pode passar de 60 s; um lançamento de aquecimento é descartado antes das medições.
 - Só o Windows foi medido.
+
+## 2026-10-28 — TASK-004: preferências no backend
+
+**Feito**
+- Contrato `preferences` em `src/shared/api.ts`, store `preferences.json` no main (atômico, versionado, limitado a chaves `reqora.*` e 1 MiB) e exposição no preload.
+- O renderer carrega as preferências do backend antes do primeiro render, migra uma vez as chaves do localStorage (mantendo as originais) e usa o localStorage só como fallback.
+
+**Evidências**
+- `pnpm typecheck` verde; `pnpm test` 15 arquivos, 151 testes verdes (11 novos); `pnpm build` verde.
+- `pnpm smoke:electron`: 5 cenários verdes; o search confere que histórico e filtros sobrevivem a um reload.
+
+**Limitações**
+- A migração não foi exercitada sobre a cópia do perfil real de `%APPDATA%\reqora`; só nos testes.

@@ -5,6 +5,7 @@ import { createImportService } from "./importService";
 import { registerIpc } from "./ipc";
 import { createFileWorkspaceStore } from "./workspaceStore";
 import { createSecretStore } from "./secretStore";
+import { createPreferencesStore } from "./preferencesStore";
 import { annotateSecrets, extractSecrets } from "./secretVariables";
 import { SEND_LIMITS, sendHttp } from "./http/sendRequest";
 import { runRequest } from "../runner/run";
@@ -78,6 +79,7 @@ void app.whenReady().then(() => {
       }),
     revealSecret: async (variableId) =>
       (await isSecretVariable(variableId)) ? ((await secrets.get(variableId)) ?? null) : null,
+    preferences: createPreferencesStore(userData),
   });
   createWindow();
   app.on("activate", () => {
