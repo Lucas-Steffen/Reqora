@@ -17,7 +17,10 @@ A carga da máquina no momento de cada medição (memória livre, outros apps ab
 ## Método
 
 - **Builds de produção**, sempre na mesma máquina.
-- **Árvore de processos inteira.** Um amostrador PowerShell de longa duração lê `Win32_Process` a cada 100 ms e segue `ParentProcessId` a partir do PID raiz. Isso inclui os processos de renderer, GPU e utility do Electron e os `msedgewebview2.exe` do Tauri. O amostrador fica fora da árvore medida.
+- **Árvore de processos inteira.** Um amostrador PowerShell de longa duração (`scripts/bench/sampler.ps1`) tira um snapshot Toolhelp32 a cada 100 ms e segue o PID pai (`th32ParentProcessID`, o mesmo valor de `Win32_Process.ParentProcessId`) a partir do PID raiz. Isso inclui os processos de renderer, GPU e utility do Electron e os `msedgewebview2.exe` do Tauri. O amostrador fica fora da árvore medida, e um filho só entra se foi criado depois do pai (proteção contra PID reutilizado).
+  - *Desvio do plano:* o plano previa consultar `Win32_Process` (WMI). Toolhelp32 dá o mesmo PID pai sem uma consulta WMI de ~100 ms por tick.
+  - A memória vem de `K32GetProcessMemoryInfo` (`PROCESS_MEMORY_COUNTERS_EX2`); a CPU, de `GetProcessTimes`.
+  - Autoteste: `pnpm bench:selftest` (resultado em [TASK-002](tasks/TASK-002.md)).
 - **Métricas, por processo e somadas:**
   - `WorkingSet64` — residente; conta páginas compartilhadas mais de uma vez quando somado.
   - `PrivateMemorySize64` — commit privado.
@@ -25,7 +28,13 @@ A carga da máquina no momento de cada medição (memória livre, outros apps ab
   - CPU.
 - **Residente e privada são reportadas separadamente.**
 - **5 execuções por cenário:** mediana, mínimo e máximo; ocioso, carga e pico separados.
-- **Fixtures determinísticas** com seed fixa e SHA-256 registrado: OpenAPI de 1.000 endpoints, JSON de 20 MB, workspace com N projetos. Um servidor loopback serve as respostas.
+- **Fixtures determinísticas** com seed fixa (`20261028`) e SHA-256 registrado em `scripts/bench/fixtures.sha256.json`; `pnpm bench:fixtures` confere. Um servidor loopback (`scripts/bench/server.mjs`, 127.0.0.1) serve as respostas.
+
+  | Fixture | Conteúdo | SHA-256 | Bytes |
+  |---|---|---|---|
+  | `openapi-1000.json` | OpenAPI 3, 1.000 operações | `cc3f4625…c092fa` | 868.300 |
+  | `large-20mib.json` | array JSON de 20 MiB | `929a3e78…f8775a` | 20.971.581 |
+  | `workspace-10x100.json` | workspace v2, 10 projetos × 100 endpoints | `55ab24b1…901608` | 1.338.440 |
 
 ## Cenários
 

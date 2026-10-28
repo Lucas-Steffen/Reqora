@@ -5,7 +5,7 @@ Estados: `TODO`, `IN_PROGRESS`, `BLOCKED`, `REVIEW`, `DONE`. Uma TASK só fica `
 | TASK | Fase | Título | Prioridade | Dependências | Estado |
 |---|---|---|---|---|---|
 | [TASK-001](tasks/TASK-001.md) | A | Estrutura de gestão, auditoria, pesquisa e ADRs iniciais | Alta | — | DONE |
-| [TASK-002](tasks/TASK-002.md) | A | Harness de benchmark e fixtures | Alta | TASK-001 | TODO |
+| [TASK-002](tasks/TASK-002.md) | A | Harness de benchmark e fixtures | Alta | TASK-001 | DONE |
 | [TASK-003](tasks/TASK-003.md) | A | Baseline Electron (build de produção) | Alta | TASK-002 | TODO |
 | [TASK-004](tasks/TASK-004.md) | A | Preferências e histórico de busca no backend | Média | TASK-003 | TODO |
 | [TASK-005](tasks/TASK-005.md) | B | Toolchain Rust e MSVC | Alta | TASK-004 | TODO |

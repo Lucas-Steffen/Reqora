@@ -1,0 +1,17 @@
+{
+  "seed": 20261028,
+  "fixtures": {
+    "openapi-1000.json": {
+      "sha256": "cc3f46253552c415a2c49797715866a72cdfb60b3b0619a45fd5e29fcec092fa",
+      "bytes": 868300
+    },
+    "large-20mib.json": {
+      "sha256": "929a3e78839add7479ae69018d6572f919aaf7e2a183fe92d9ef306c73f8775a",
+      "bytes": 20971581
+    },
+    "workspace-10x100.json": {
+      "sha256": "55ab24b17daccac817711e9b04b529a09de9f3c6d10eaaed13c829c56a901608",
+      "bytes": 1338440
+    }
+  }
+}

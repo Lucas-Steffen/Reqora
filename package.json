@@ -18,7 +18,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke:electron": "node scripts/smoke-electron.mjs"
+    "smoke:electron": "node scripts/smoke-electron.mjs",
+    "bench:fixtures": "node scripts/bench/fixtures.mjs --check",
+    "bench:selftest": "node scripts/bench/sampler-selftest.mjs"
   },
   "dependencies": {
     "lucide-react": "1.57.0",
