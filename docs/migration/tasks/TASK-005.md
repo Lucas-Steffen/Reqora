@@ -47,7 +47,7 @@ Instalar rustup (`stable-msvc`) e Visual Studio Build Tools com C++ via winget (
 ## Evidências de validação
 
 - `winget install Microsoft.VisualStudio.2022.BuildTools` (com o workload `Microsoft.VisualStudio.Workload.VCTools`): "Hash do instalador verificado com êxito" seguido de "O instalador falhou com o código de saída: 1602"; winget saiu com 6.
-- `vswhere.exe` não existe; nenhum `link.exe` em `VCToolsMSVC*inHostx64d`.
+- `vswhere.exe` não existe; nenhum `link.exe` em `VC/Tools/MSVC/*/bin/Hostx64/x64`.
 
 ## Pendências
 
