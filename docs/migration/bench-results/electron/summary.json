@@ -1,0 +1,4083 @@
+{
+  "host": "electron",
+  "electronVersion": "44.8.0",
+  "startedAt": "2026-10-28T08:46:28.547Z",
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "cores": 12,
+    "totalMemBytes": 17042706432,
+    "os": "10.0.26200",
+    "node": "v24.21.0"
+  },
+  "method": {
+    "runs": 5,
+    "warmUpLaunch": true,
+    "samplerIntervalMs": 100,
+    "beforeMs": 3000,
+    "settleMs": 5000,
+    "continuousIterations": 20
+  },
+  "fixtures": {
+    "openapi-1000.json": {
+      "sha256": "cc3f46253552c415a2c49797715866a72cdfb60b3b0619a45fd5e29fcec092fa",
+      "bytes": 868300
+    },
+    "large-20mib.json": {
+      "sha256": "929a3e78839add7479ae69018d6572f919aaf7e2a183fe92d9ef306c73f8775a",
+      "bytes": 20971581
+    },
+    "workspace-10x100.json": {
+      "sha256": "55ab24b17daccac817711e9b04b529a09de9f3c6d10eaaed13c829c56a901608",
+      "bytes": 1338440
+    }
+  },
+  "scenarios": {
+    "startup-idle": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 8960831488,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 797,
+          "startupAt5s": {
+            "processes": 4,
+            "ws": 375578624,
+            "priv": 246112256,
+            "wsPriv": 113405952
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 368738304,
+              "min": 364486656,
+              "max": 375889920
+            },
+            "priv": {
+              "median": 235028480,
+              "min": 230178816,
+              "max": 246321152
+            },
+            "wsPriv": {
+              "median": 104878080,
+              "min": 100454400,
+              "max": 113577984
+            }
+          },
+          "idleEnd": {
+            "ticks": 51,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 364511232,
+              "min": 364486656,
+              "max": 366706688
+            },
+            "priv": {
+              "median": 230203392,
+              "min": 230178816,
+              "max": 232714240
+            },
+            "wsPriv": {
+              "median": 100478976,
+              "min": 100454400,
+              "max": 102744064
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8961273856,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 556,
+          "startupAt5s": {
+            "processes": 4,
+            "ws": 369291264,
+            "priv": 245932032,
+            "wsPriv": 109883392
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 361496576,
+              "min": 358477824,
+              "max": 369614848
+            },
+            "priv": {
+              "median": 234139648,
+              "min": 230232064,
+              "max": 246120448
+            },
+            "wsPriv": {
+              "median": 100315136,
+              "min": 97157120,
+              "max": 110071808
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 358653952,
+              "min": 358477824,
+              "max": 359288832
+            },
+            "priv": {
+              "median": 230408192,
+              "min": 230232064,
+              "max": 231284736
+            },
+            "wsPriv": {
+              "median": 97333248,
+              "min": 97157120,
+              "max": 98041856
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8992968704,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 513,
+          "startupAt5s": {
+            "processes": 4,
+            "ws": 369618944,
+            "priv": 243015680,
+            "wsPriv": 110542848
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 360169472,
+              "min": 358232064,
+              "max": 369934336
+            },
+            "priv": {
+              "median": 228655104,
+              "min": 226377728,
+              "max": 243249152
+            },
+            "wsPriv": {
+              "median": 99270656,
+              "min": 97218560,
+              "max": 110727168
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 358260736,
+              "min": 358232064,
+              "max": 360181760
+            },
+            "priv": {
+              "median": 226406400,
+              "min": 226377728,
+              "max": 228610048
+            },
+            "wsPriv": {
+              "median": 97247232,
+              "min": 97218560,
+              "max": 99241984
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9009315840,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 517,
+          "startupAt5s": {
+            "processes": 4,
+            "ws": 369451008,
+            "priv": 243200000,
+            "wsPriv": 110288896
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 361852928,
+              "min": 358506496,
+              "max": 369827840
+            },
+            "priv": {
+              "median": 230916096,
+              "min": 227422208,
+              "max": 243519488
+            },
+            "wsPriv": {
+              "median": 100904960,
+              "min": 97406976,
+              "max": 110489600
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 358514688,
+              "min": 358506496,
+              "max": 360640512
+            },
+            "priv": {
+              "median": 227430400,
+              "min": 227422208,
+              "max": 229756928
+            },
+            "wsPriv": {
+              "median": 97415168,
+              "min": 97406976,
+              "max": 99618816
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9036345344,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 523,
+          "startupAt5s": {
+            "processes": 4,
+            "ws": 369553408,
+            "priv": 243679232,
+            "wsPriv": 110170112
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 361844736,
+              "min": 358481920,
+              "max": 370061312
+            },
+            "priv": {
+              "median": 231247872,
+              "min": 227733504,
+              "max": 244019200
+            },
+            "wsPriv": {
+              "median": 100683776,
+              "min": 97177600,
+              "max": 110321664
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 4,
+              "min": 4,
+              "max": 4
+            },
+            "ws": {
+              "median": 358494208,
+              "min": 358481920,
+              "max": 359489536
+            },
+            "priv": {
+              "median": 227745792,
+              "min": 227733504,
+              "max": 228913152
+            },
+            "wsPriv": {
+              "median": 97189888,
+              "min": 97177600,
+              "max": 98254848
+            }
+          }
+        }
+      ],
+      "summary": {
+        "startupAt5s": {
+          "processes": {
+            "median": 4,
+            "min": 4,
+            "max": 4,
+            "n": 5
+          },
+          "ws": {
+            "median": 369553408,
+            "min": 369291264,
+            "max": 375578624,
+            "n": 5
+          },
+          "priv": {
+            "median": 243679232,
+            "min": 243015680,
+            "max": 246112256,
+            "n": 5
+          },
+          "wsPriv": {
+            "median": 110288896,
+            "min": 109883392,
+            "max": 113405952,
+            "n": 5
+          }
+        },
+        "idle60s": {
+          "processes": {
+            "median": {
+              "median": 4,
+              "min": 4,
+              "max": 4,
+              "n": 5
+            },
+            "peak": {
+              "median": 4,
+              "min": 4,
+              "max": 4,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 361844736,
+              "min": 360169472,
+              "max": 368738304,
+              "n": 5
+            },
+            "peak": {
+              "median": 369934336,
+              "min": 369614848,
+              "max": 375889920,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 231247872,
+              "min": 228655104,
+              "max": 235028480,
+              "n": 5
+            },
+            "peak": {
+              "median": 244019200,
+              "min": 243249152,
+              "max": 246321152,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 100683776,
+              "min": 99270656,
+              "max": 104878080,
+              "n": 5
+            },
+            "peak": {
+              "median": 110489600,
+              "min": 110071808,
+              "max": 113577984,
+              "n": 5
+            }
+          }
+        },
+        "idleEnd": {
+          "processes": {
+            "median": {
+              "median": 4,
+              "min": 4,
+              "max": 4,
+              "n": 5
+            },
+            "peak": {
+              "median": 4,
+              "min": 4,
+              "max": 4,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 358514688,
+              "min": 358260736,
+              "max": 364511232,
+              "n": 5
+            },
+            "peak": {
+              "median": 360181760,
+              "min": 359288832,
+              "max": 366706688,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 227745792,
+              "min": 226406400,
+              "max": 230408192,
+              "n": 5
+            },
+            "peak": {
+              "median": 229756928,
+              "min": 228610048,
+              "max": 232714240,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 97333248,
+              "min": 97189888,
+              "max": 100478976,
+              "n": 5
+            },
+            "peak": {
+              "median": 99241984,
+              "min": 98041856,
+              "max": 102744064,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "import": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 9057751040,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 358,
+          "actionMs": 615,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385073152,
+              "min": 382988288,
+              "max": 385331200
+            },
+            "priv": {
+              "median": 254033920,
+              "min": 247316480,
+              "max": 254119936
+            },
+            "wsPriv": {
+              "median": 114941952,
+              "min": 113950720,
+              "max": 115298304
+            }
+          },
+          "during": {
+            "ticks": 6,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 461393920,
+              "min": 391839744,
+              "max": 516399104
+            },
+            "priv": {
+              "median": 340516864,
+              "min": 262664192,
+              "max": 404746240
+            },
+            "wsPriv": {
+              "median": 186220544,
+              "min": 119898112,
+              "max": 240177152
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 536457216,
+              "min": 536322048,
+              "max": 536485888
+            },
+            "priv": {
+              "median": 423178240,
+              "min": 423067648,
+              "max": 423198720
+            },
+            "wsPriv": {
+              "median": 260218880,
+              "min": 260087808,
+              "max": 260235264
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9052684288,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 357,
+          "actionMs": 556,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388679680,
+              "min": 386420736,
+              "max": 388739072
+            },
+            "priv": {
+              "median": 256352256,
+              "min": 249589760,
+              "max": 256356352
+            },
+            "wsPriv": {
+              "median": 118558720,
+              "min": 117399552,
+              "max": 118648832
+            }
+          },
+          "during": {
+            "ticks": 6,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 455317504,
+              "min": 388681728,
+              "max": 506224640
+            },
+            "priv": {
+              "median": 332406784,
+              "min": 256147456,
+              "max": 394293248
+            },
+            "wsPriv": {
+              "median": 180334592,
+              "min": 118648832,
+              "max": 229933056
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 539357184,
+              "min": 539295744,
+              "max": 539381760
+            },
+            "priv": {
+              "median": 425607168,
+              "min": 425517056,
+              "max": 425619456
+            },
+            "wsPriv": {
+              "median": 263114752,
+              "min": 263057408,
+              "max": 263127040
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9044221952,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 347,
+          "actionMs": 591,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385507328,
+              "min": 377774080,
+              "max": 385556480
+            },
+            "priv": {
+              "median": 254144512,
+              "min": 236511232,
+              "max": 254148608
+            },
+            "wsPriv": {
+              "median": 115310592,
+              "min": 109473792,
+              "max": 115314688
+            }
+          },
+          "during": {
+            "ticks": 6,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 449542144,
+              "min": 387035136,
+              "max": 508936192
+            },
+            "priv": {
+              "median": 327481344,
+              "min": 255377408,
+              "max": 399450112
+            },
+            "wsPriv": {
+              "median": 174338048,
+              "min": 116912128,
+              "max": 232652800
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 537264128,
+              "min": 537137152,
+              "max": 537284608
+            },
+            "priv": {
+              "median": 426569728,
+              "min": 426520576,
+              "max": 426577920
+            },
+            "wsPriv": {
+              "median": 260931584,
+              "min": 260808704,
+              "max": 260939776
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9045594112,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 362,
+          "actionMs": 557,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388474880,
+              "min": 380375040,
+              "max": 388526080
+            },
+            "priv": {
+              "median": 255754240,
+              "min": 238043136,
+              "max": 255758336
+            },
+            "wsPriv": {
+              "median": 118226944,
+              "min": 112009216,
+              "max": 118231040
+            }
+          },
+          "during": {
+            "ticks": 6,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 457580544,
+              "min": 390238208,
+              "max": 506327040
+            },
+            "priv": {
+              "median": 334174208,
+              "min": 257155072,
+              "max": 393768960
+            },
+            "wsPriv": {
+              "median": 182609920,
+              "min": 120066048,
+              "max": 229982208
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 540319744,
+              "min": 540303360,
+              "max": 540352512
+            },
+            "priv": {
+              "median": 426999808,
+              "min": 426995712,
+              "max": 427048960
+            },
+            "wsPriv": {
+              "median": 263905280,
+              "min": 263901184,
+              "max": 263954432
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9034170368,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 348,
+          "actionMs": 615,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386377728,
+              "min": 378085376,
+              "max": 386433024
+            },
+            "priv": {
+              "median": 255508480,
+              "min": 237707264,
+              "max": 255516672
+            },
+            "wsPriv": {
+              "median": 116101120,
+              "min": 109678592,
+              "max": 116101120
+            }
+          },
+          "during": {
+            "ticks": 7,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 470982656,
+              "min": 386793472,
+              "max": 538386432
+            },
+            "priv": {
+              "median": 349278208,
+              "min": 255688704,
+              "max": 428875776
+            },
+            "wsPriv": {
+              "median": 195948544,
+              "min": 116600832,
+              "max": 261918720
+            }
+          },
+          "after": {
+            "ticks": 21,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 538865664,
+              "min": 538746880,
+              "max": 538890240
+            },
+            "priv": {
+              "median": 428044288,
+              "min": 427913216,
+              "max": 428048384
+            },
+            "wsPriv": {
+              "median": 262463488,
+              "min": 262348800,
+              "max": 262467584
+            }
+          }
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 357,
+          "min": 347,
+          "max": 362,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 591,
+          "min": 556,
+          "max": 615,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 386377728,
+              "min": 385073152,
+              "max": 388679680,
+              "n": 5
+            },
+            "peak": {
+              "median": 386433024,
+              "min": 385331200,
+              "max": 388739072,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 255508480,
+              "min": 254033920,
+              "max": 256352256,
+              "n": 5
+            },
+            "peak": {
+              "median": 255516672,
+              "min": 254119936,
+              "max": 256356352,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 116101120,
+              "min": 114941952,
+              "max": 118558720,
+              "n": 5
+            },
+            "peak": {
+              "median": 116101120,
+              "min": 115298304,
+              "max": 118648832,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 457580544,
+              "min": 449542144,
+              "max": 470982656,
+              "n": 5
+            },
+            "peak": {
+              "median": 508936192,
+              "min": 506224640,
+              "max": 538386432,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 334174208,
+              "min": 327481344,
+              "max": 349278208,
+              "n": 5
+            },
+            "peak": {
+              "median": 399450112,
+              "min": 393768960,
+              "max": 428875776,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 182609920,
+              "min": 174338048,
+              "max": 195948544,
+              "n": 5
+            },
+            "peak": {
+              "median": 232652800,
+              "min": 229933056,
+              "max": 261918720,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 538865664,
+              "min": 536457216,
+              "max": 540319744,
+              "n": 5
+            },
+            "peak": {
+              "median": 538890240,
+              "min": 536485888,
+              "max": 540352512,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 426569728,
+              "min": 423178240,
+              "max": 428044288,
+              "n": 5
+            },
+            "peak": {
+              "median": 426577920,
+              "min": 423198720,
+              "max": 428048384,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 262463488,
+              "min": 260218880,
+              "max": 263905280,
+              "n": 5
+            },
+            "peak": {
+              "median": 262467584,
+              "min": 260235264,
+              "max": 263954432,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "search": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 9037078528,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 350,
+          "actionMs": 3522,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386031616,
+              "min": 383782912,
+              "max": 386846720
+            },
+            "priv": {
+              "median": 253689856,
+              "min": 246943744,
+              "max": 253882368
+            },
+            "wsPriv": {
+              "median": 116023296,
+              "min": 114909184,
+              "max": 116064256
+            }
+          },
+          "during": {
+            "ticks": 36,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 426452992,
+              "min": 386846720,
+              "max": 448282624
+            },
+            "priv": {
+              "median": 303546368,
+              "min": 253882368,
+              "max": 326311936
+            },
+            "wsPriv": {
+              "median": 152328192,
+              "min": 116064256,
+              "max": 173998080
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 448237568,
+              "min": 447885312,
+              "max": 448319488
+            },
+            "priv": {
+              "median": 326647808,
+              "min": 325967872,
+              "max": 326733824
+            },
+            "wsPriv": {
+              "median": 174202880,
+              "min": 173850624,
+              "max": 174284800
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 9033302016,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 353,
+          "actionMs": 3490,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385636352,
+              "min": 385073152,
+              "max": 385691648
+            },
+            "priv": {
+              "median": 255295488,
+              "min": 254865408,
+              "max": 255303680
+            },
+            "wsPriv": {
+              "median": 115310592,
+              "min": 115015680,
+              "max": 115318784
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 424288256,
+              "min": 388808704,
+              "max": 447410176
+            },
+            "priv": {
+              "median": 303185920,
+              "min": 266940416,
+              "max": 326545408
+            },
+            "wsPriv": {
+              "median": 149807104,
+              "min": 116887552,
+              "max": 172732416
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 447778816,
+              "min": 447553536,
+              "max": 447950848
+            },
+            "priv": {
+              "median": 327528448,
+              "min": 327172096,
+              "max": 327700480
+            },
+            "wsPriv": {
+              "median": 173432832,
+              "min": 173207552,
+              "max": 173604864
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8968454144,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 354,
+          "actionMs": 3492,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388937728,
+              "min": 379920384,
+              "max": 388988928
+            },
+            "priv": {
+              "median": 258101248,
+              "min": 239144960,
+              "max": 258105344
+            },
+            "wsPriv": {
+              "median": 119263232,
+              "min": 112136192,
+              "max": 119271424
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 428953600,
+              "min": 390078464,
+              "max": 450818048
+            },
+            "priv": {
+              "median": 307564544,
+              "min": 258138112,
+              "max": 330174464
+            },
+            "wsPriv": {
+              "median": 155131904,
+              "min": 119476224,
+              "max": 176865280
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 450629632,
+              "min": 450359296,
+              "max": 450686976
+            },
+            "priv": {
+              "median": 330252288,
+              "min": 329719808,
+              "max": 330309632
+            },
+            "wsPriv": {
+              "median": 176902144,
+              "min": 176631808,
+              "max": 176959488
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8994910208,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 382,
+          "actionMs": 3462,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 391440384,
+              "min": 389447680,
+              "max": 392441856
+            },
+            "priv": {
+              "median": 259858432,
+              "min": 253435904,
+              "max": 259866624
+            },
+            "wsPriv": {
+              "median": 121126912,
+              "min": 120246272,
+              "max": 121270272
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 430174208,
+              "min": 392441856,
+              "max": 453775360
+            },
+            "priv": {
+              "median": 308260864,
+              "min": 259829760,
+              "max": 331534336
+            },
+            "wsPriv": {
+              "median": 155721728,
+              "min": 121270272,
+              "max": 178954240
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 453718016,
+              "min": 453591040,
+              "max": 453730304
+            },
+            "priv": {
+              "median": 332165120,
+              "min": 332038144,
+              "max": 332177408
+            },
+            "wsPriv": {
+              "median": 179376128,
+              "min": 179249152,
+              "max": 179388416
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8990613504,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 352,
+          "actionMs": 3491,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 389007360,
+              "min": 380276736,
+              "max": 389058560
+            },
+            "priv": {
+              "median": 259555328,
+              "min": 241410048,
+              "max": 259563520
+            },
+            "wsPriv": {
+              "median": 119263232,
+              "min": 112427008,
+              "max": 119271424
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 427876352,
+              "min": 392114176,
+              "max": 449880064
+            },
+            "priv": {
+              "median": 307675136,
+              "min": 270966784,
+              "max": 330129408
+            },
+            "wsPriv": {
+              "median": 153989120,
+              "min": 120696832,
+              "max": 175869952
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 450101248,
+              "min": 449921024,
+              "max": 450113536
+            },
+            "priv": {
+              "median": 330641408,
+              "min": 330326016,
+              "max": 330653696
+            },
+            "wsPriv": {
+              "median": 176316416,
+              "min": 176136192,
+              "max": 176328704
+            }
+          }
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 353,
+          "min": 350,
+          "max": 382,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 3491,
+          "min": 3462,
+          "max": 3522,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 388937728,
+              "min": 385636352,
+              "max": 391440384,
+              "n": 5
+            },
+            "peak": {
+              "median": 388988928,
+              "min": 385691648,
+              "max": 392441856,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 258101248,
+              "min": 253689856,
+              "max": 259858432,
+              "n": 5
+            },
+            "peak": {
+              "median": 258105344,
+              "min": 253882368,
+              "max": 259866624,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 119263232,
+              "min": 115310592,
+              "max": 121126912,
+              "n": 5
+            },
+            "peak": {
+              "median": 119271424,
+              "min": 115318784,
+              "max": 121270272,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 427876352,
+              "min": 424288256,
+              "max": 430174208,
+              "n": 5
+            },
+            "peak": {
+              "median": 449880064,
+              "min": 447410176,
+              "max": 453775360,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 307564544,
+              "min": 303185920,
+              "max": 308260864,
+              "n": 5
+            },
+            "peak": {
+              "median": 330129408,
+              "min": 326311936,
+              "max": 331534336,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 153989120,
+              "min": 149807104,
+              "max": 155721728,
+              "n": 5
+            },
+            "peak": {
+              "median": 175869952,
+              "min": 172732416,
+              "max": 178954240,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 450101248,
+              "min": 447778816,
+              "max": 453718016,
+              "n": 5
+            },
+            "peak": {
+              "median": 450113536,
+              "min": 447950848,
+              "max": 453730304,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 330252288,
+              "min": 326647808,
+              "max": 332165120,
+              "n": 5
+            },
+            "peak": {
+              "median": 330309632,
+              "min": 326733824,
+              "max": 332177408,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 176316416,
+              "min": 173432832,
+              "max": 179376128,
+              "n": 5
+            },
+            "peak": {
+              "median": 176328704,
+              "min": 173604864,
+              "max": 179388416,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "open-10": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 8990187520,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 365,
+          "actionMs": 3434,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385882112,
+              "min": 382816256,
+              "max": 385937408
+            },
+            "priv": {
+              "median": 254304256,
+              "min": 248795136,
+              "max": 254308352
+            },
+            "wsPriv": {
+              "median": 115572736,
+              "min": 113610752,
+              "max": 115585024
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 397086720,
+              "min": 385368064,
+              "max": 402841600
+            },
+            "priv": {
+              "median": 267436032,
+              "min": 254160896,
+              "max": 272699392
+            },
+            "wsPriv": {
+              "median": 125059072,
+              "min": 115326976,
+              "max": 130527232
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 402575360,
+              "min": 402575360,
+              "max": 402817024
+            },
+            "priv": {
+              "median": 266913792,
+              "min": 266911744,
+              "max": 271581184
+            },
+            "wsPriv": {
+              "median": 130387968,
+              "min": 130387968,
+              "max": 130629632
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8987471872,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 348,
+          "actionMs": 3375,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386236416,
+              "min": 383844352,
+              "max": 386293760
+            },
+            "priv": {
+              "median": 254681088,
+              "min": 247889920,
+              "max": 254689280
+            },
+            "wsPriv": {
+              "median": 115941376,
+              "min": 114647040,
+              "max": 115949568
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 397877248,
+              "min": 385908736,
+              "max": 403259392
+            },
+            "priv": {
+              "median": 267603968,
+              "min": 254300160,
+              "max": 272482304
+            },
+            "wsPriv": {
+              "median": 125882368,
+              "min": 115838976,
+              "max": 130961408
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 403005440,
+              "min": 403005440,
+              "max": 403247104
+            },
+            "priv": {
+              "median": 266727424,
+              "min": 266727424,
+              "max": 271396864
+            },
+            "wsPriv": {
+              "median": 130834432,
+              "min": 130834432,
+              "max": 131076096
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8981057536,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 348,
+          "actionMs": 3353,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385447936,
+              "min": 383143936,
+              "max": 385503232
+            },
+            "priv": {
+              "median": 252977152,
+              "min": 248324096,
+              "max": 252985344
+            },
+            "wsPriv": {
+              "median": 115040256,
+              "min": 113840128,
+              "max": 115044352
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 396824576,
+              "min": 385007616,
+              "max": 402911232
+            },
+            "priv": {
+              "median": 265897984,
+              "min": 252846080,
+              "max": 271605760
+            },
+            "wsPriv": {
+              "median": 124696576,
+              "min": 114835456,
+              "max": 130560000
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 402636800,
+              "min": 402636800,
+              "max": 402878464
+            },
+            "priv": {
+              "median": 265924608,
+              "min": 265793536,
+              "max": 270462976
+            },
+            "wsPriv": {
+              "median": 130412544,
+              "min": 130412544,
+              "max": 130654208
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8991707136,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 354,
+          "actionMs": 3334,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385384448,
+              "min": 383090688,
+              "max": 385429504
+            },
+            "priv": {
+              "median": 251023360,
+              "min": 244350976,
+              "max": 251027456
+            },
+            "wsPriv": {
+              "median": 115109888,
+              "min": 113930240,
+              "max": 115113984
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 397281280,
+              "min": 385122304,
+              "max": 402788352
+            },
+            "priv": {
+              "median": 264167424,
+              "min": 250613760,
+              "max": 269398016
+            },
+            "wsPriv": {
+              "median": 125300736,
+              "min": 115073024,
+              "max": 130527232
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 402610176,
+              "min": 402604032,
+              "max": 402812928
+            },
+            "priv": {
+              "median": 263700480,
+              "min": 263700480,
+              "max": 268337152
+            },
+            "wsPriv": {
+              "median": 130469888,
+              "min": 130469888,
+              "max": 130678784
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8979349504,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 351,
+          "actionMs": 3339,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385955840,
+              "min": 377991168,
+              "max": 386011136
+            },
+            "priv": {
+              "median": 254861312,
+              "min": 237223936,
+              "max": 254869504
+            },
+            "wsPriv": {
+              "median": 115810304,
+              "min": 109727744,
+              "max": 115814400
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 398018560,
+              "min": 386781184,
+              "max": 403562496
+            },
+            "priv": {
+              "median": 267880448,
+              "min": 255102976,
+              "max": 274243584
+            },
+            "wsPriv": {
+              "median": 126083072,
+              "min": 116039680,
+              "max": 131305472
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 403224576,
+              "min": 403218432,
+              "max": 403427328
+            },
+            "priv": {
+              "median": 268513280,
+              "min": 268513280,
+              "max": 273149952
+            },
+            "wsPriv": {
+              "median": 131194880,
+              "min": 131194880,
+              "max": 131403776
+            }
+          }
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 351,
+          "min": 348,
+          "max": 365,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 3353,
+          "min": 3334,
+          "max": 3434,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 385882112,
+              "min": 385384448,
+              "max": 386236416,
+              "n": 5
+            },
+            "peak": {
+              "median": 385937408,
+              "min": 385429504,
+              "max": 386293760,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 254304256,
+              "min": 251023360,
+              "max": 254861312,
+              "n": 5
+            },
+            "peak": {
+              "median": 254308352,
+              "min": 251027456,
+              "max": 254869504,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 115572736,
+              "min": 115040256,
+              "max": 115941376,
+              "n": 5
+            },
+            "peak": {
+              "median": 115585024,
+              "min": 115044352,
+              "max": 115949568,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 397281280,
+              "min": 396824576,
+              "max": 398018560,
+              "n": 5
+            },
+            "peak": {
+              "median": 402911232,
+              "min": 402788352,
+              "max": 403562496,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 267436032,
+              "min": 264167424,
+              "max": 267880448,
+              "n": 5
+            },
+            "peak": {
+              "median": 272482304,
+              "min": 269398016,
+              "max": 274243584,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 125300736,
+              "min": 124696576,
+              "max": 126083072,
+              "n": 5
+            },
+            "peak": {
+              "median": 130560000,
+              "min": 130527232,
+              "max": 131305472,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 402636800,
+              "min": 402575360,
+              "max": 403224576,
+              "n": 5
+            },
+            "peak": {
+              "median": 402878464,
+              "min": 402812928,
+              "max": 403427328,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 266727424,
+              "min": 263700480,
+              "max": 268513280,
+              "n": 5
+            },
+            "peak": {
+              "median": 271396864,
+              "min": 268337152,
+              "max": 273149952,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 130469888,
+              "min": 130387968,
+              "max": 131194880,
+              "n": 5
+            },
+            "peak": {
+              "median": 130678784,
+              "min": 130629632,
+              "max": 131403776,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "large-response": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 8982429696,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 358,
+          "actionMs": 3457,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 389279744,
+              "min": 386457600,
+              "max": 389332992
+            },
+            "priv": {
+              "median": 257720320,
+              "min": 252612608,
+              "max": 257724416
+            },
+            "wsPriv": {
+              "median": 119132160,
+              "min": 117415936,
+              "max": 119132160
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 572555264,
+              "min": 390262784,
+              "max": 1325387776
+            },
+            "priv": {
+              "median": 446754816,
+              "min": 257679360,
+              "max": 1224425472
+            },
+            "wsPriv": {
+              "median": 292208640,
+              "min": 119255040,
+              "max": 1044905984
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1317548032,
+              "min": 1317548032,
+              "max": 1317560320
+            },
+            "priv": {
+              "median": 1210322944,
+              "min": 1210322944,
+              "max": 1210327040
+            },
+            "wsPriv": {
+              "median": 1037225984,
+              "min": 1037225984,
+              "max": 1037230080
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8951910400,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 355,
+          "actionMs": 3422,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 392079360,
+              "min": 383815680,
+              "max": 392134656
+            },
+            "priv": {
+              "median": 260595712,
+              "min": 242573312,
+              "max": 260599808
+            },
+            "wsPriv": {
+              "median": 121393152,
+              "min": 115027968,
+              "max": 121397248
+            }
+          },
+          "during": {
+            "ticks": 35,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 582291456,
+              "min": 395075584,
+              "max": 1328742400
+            },
+            "priv": {
+              "median": 456601600,
+              "min": 270123008,
+              "max": 1228451840
+            },
+            "wsPriv": {
+              "median": 301371392,
+              "min": 122798080,
+              "max": 1047703552
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1321709568,
+              "min": 1321709568,
+              "max": 1321725952
+            },
+            "priv": {
+              "median": 1214513152,
+              "min": 1214382080,
+              "max": 1214513152
+            },
+            "wsPriv": {
+              "median": 1040846848,
+              "min": 1040846848,
+              "max": 1040855040
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8954728448,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 353,
+          "actionMs": 3379,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388403200,
+              "min": 386428928,
+              "max": 388452352
+            },
+            "priv": {
+              "median": 256573440,
+              "min": 250052608,
+              "max": 256577536
+            },
+            "wsPriv": {
+              "median": 118185984,
+              "min": 117317632,
+              "max": 118185984
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 576475136,
+              "min": 389554176,
+              "max": 1325473792
+            },
+            "priv": {
+              "median": 449632256,
+              "min": 256901120,
+              "max": 1223499776
+            },
+            "wsPriv": {
+              "median": 296026112,
+              "min": 118374400,
+              "max": 1044877312
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1318641664,
+              "min": 1318215680,
+              "max": 1318653952
+            },
+            "priv": {
+              "median": 1210388480,
+              "min": 1209962496,
+              "max": 1210531840
+            },
+            "wsPriv": {
+              "median": 1038225408,
+              "min": 1037799424,
+              "max": 1038237696
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8954847232,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 345,
+          "actionMs": 3377,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388397056,
+              "min": 379899904,
+              "max": 388456448
+            },
+            "priv": {
+              "median": 257138688,
+              "min": 238886912,
+              "max": 257138688
+            },
+            "wsPriv": {
+              "median": 118185984,
+              "min": 111558656,
+              "max": 118185984
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 576194560,
+              "min": 391294976,
+              "max": 1324695552
+            },
+            "priv": {
+              "median": 448718848,
+              "min": 266371072,
+              "max": 1222201344
+            },
+            "wsPriv": {
+              "median": 295581696,
+              "min": 119480320,
+              "max": 1043939328
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1317978112,
+              "min": 1317789696,
+              "max": 1317990400
+            },
+            "priv": {
+              "median": 1209561088,
+              "min": 1209266176,
+              "max": 1209573376
+            },
+            "wsPriv": {
+              "median": 1037406208,
+              "min": 1037217792,
+              "max": 1037418496
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8943874048,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 357,
+          "actionMs": 3370,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 389148672,
+              "min": 386105344,
+              "max": 389201920
+            },
+            "priv": {
+              "median": 257036288,
+              "min": 251797504,
+              "max": 257044480
+            },
+            "wsPriv": {
+              "median": 119009280,
+              "min": 117071872,
+              "max": 119017472
+            }
+          },
+          "during": {
+            "ticks": 34,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 575645696,
+              "min": 390213632,
+              "max": 1325608960
+            },
+            "priv": {
+              "median": 448610304,
+              "min": 257044480,
+              "max": 1223499776
+            },
+            "wsPriv": {
+              "median": 295086080,
+              "min": 119185408,
+              "max": 1044926464
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1317781504,
+              "min": 1317453824,
+              "max": 1317793792
+            },
+            "priv": {
+              "median": 1209450496,
+              "min": 1208729600,
+              "max": 1209462784
+            },
+            "wsPriv": {
+              "median": 1037283328,
+              "min": 1036955648,
+              "max": 1037295616
+            }
+          }
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 355,
+          "min": 345,
+          "max": 358,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 3379,
+          "min": 3370,
+          "max": 3457,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 389148672,
+              "min": 388397056,
+              "max": 392079360,
+              "n": 5
+            },
+            "peak": {
+              "median": 389201920,
+              "min": 388452352,
+              "max": 392134656,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 257138688,
+              "min": 256573440,
+              "max": 260595712,
+              "n": 5
+            },
+            "peak": {
+              "median": 257138688,
+              "min": 256577536,
+              "max": 260599808,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 119009280,
+              "min": 118185984,
+              "max": 121393152,
+              "n": 5
+            },
+            "peak": {
+              "median": 119017472,
+              "min": 118185984,
+              "max": 121397248,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 576194560,
+              "min": 572555264,
+              "max": 582291456,
+              "n": 5
+            },
+            "peak": {
+              "median": 1325473792,
+              "min": 1324695552,
+              "max": 1328742400,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 448718848,
+              "min": 446754816,
+              "max": 456601600,
+              "n": 5
+            },
+            "peak": {
+              "median": 1223499776,
+              "min": 1222201344,
+              "max": 1228451840,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 295581696,
+              "min": 292208640,
+              "max": 301371392,
+              "n": 5
+            },
+            "peak": {
+              "median": 1044905984,
+              "min": 1043939328,
+              "max": 1047703552,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 1317978112,
+              "min": 1317548032,
+              "max": 1321709568,
+              "n": 5
+            },
+            "peak": {
+              "median": 1317990400,
+              "min": 1317560320,
+              "max": 1321725952,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 1210322944,
+              "min": 1209450496,
+              "max": 1214513152,
+              "n": 5
+            },
+            "peak": {
+              "median": 1210327040,
+              "min": 1209462784,
+              "max": 1214513152,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 1037406208,
+              "min": 1037225984,
+              "max": 1040846848,
+              "n": 5
+            },
+            "peak": {
+              "median": 1037418496,
+              "min": 1037230080,
+              "max": 1040855040,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "project-switch": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 9013534720,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 349,
+          "actionMs": 7230,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386072576,
+              "min": 384024576,
+              "max": 386129920
+            },
+            "priv": {
+              "median": 252952576,
+              "min": 246505472,
+              "max": 252956672
+            },
+            "wsPriv": {
+              "median": 115892224,
+              "min": 114946048,
+              "max": 115900416
+            }
+          },
+          "during": {
+            "ticks": 73,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 501518336,
+              "min": 385769472,
+              "max": 554778624
+            },
+            "priv": {
+              "median": 372211712,
+              "min": 252862464,
+              "max": 427241472
+            },
+            "wsPriv": {
+              "median": 228306944,
+              "min": 115822592,
+              "max": 281088000
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 554205184,
+              "min": 554176512,
+              "max": 554242048
+            },
+            "priv": {
+              "median": 426852352,
+              "min": 426852352,
+              "max": 426934272
+            },
+            "wsPriv": {
+              "median": 280731648,
+              "min": 280731648,
+              "max": 280797184
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8992284672,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 350,
+          "actionMs": 7219,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386304000,
+              "min": 378384384,
+              "max": 386363392
+            },
+            "priv": {
+              "median": 253403136,
+              "min": 235970560,
+              "max": 253407232
+            },
+            "wsPriv": {
+              "median": 115974144,
+              "min": 109932544,
+              "max": 115978240
+            }
+          },
+          "during": {
+            "ticks": 73,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 508108800,
+              "min": 389021696,
+              "max": 554975232
+            },
+            "priv": {
+              "median": 379625472,
+              "min": 256323584,
+              "max": 428400640
+            },
+            "wsPriv": {
+              "median": 234369024,
+              "min": 118644736,
+              "max": 281124864
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 553660416,
+              "min": 553631744,
+              "max": 553697280
+            },
+            "priv": {
+              "median": 426852352,
+              "min": 426848256,
+              "max": 426930176
+            },
+            "wsPriv": {
+              "median": 280031232,
+              "min": 280027136,
+              "max": 280092672
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8993959936,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 360,
+          "actionMs": 7166,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 389515264,
+              "min": 386170880,
+              "max": 389574656
+            },
+            "priv": {
+              "median": 256827392,
+              "min": 251265024,
+              "max": 256835584
+            },
+            "wsPriv": {
+              "median": 118730752,
+              "min": 116477952,
+              "max": 118734848
+            }
+          },
+          "during": {
+            "ticks": 72,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 505942016,
+              "min": 388448256,
+              "max": 551645184
+            },
+            "priv": {
+              "median": 376848384,
+              "min": 255856640,
+              "max": 424456192
+            },
+            "wsPriv": {
+              "median": 232263680,
+              "min": 117891072,
+              "max": 277356544
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 546439168,
+              "min": 546410496,
+              "max": 546443264
+            },
+            "priv": {
+              "median": 416731136,
+              "min": 416706560,
+              "max": 416755712
+            },
+            "wsPriv": {
+              "median": 272355328,
+              "min": 272338944,
+              "max": 272371712
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8935129088,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 356,
+          "actionMs": 7201,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386447360,
+              "min": 384143360,
+              "max": 386506752
+            },
+            "priv": {
+              "median": 255098880,
+              "min": 248332288,
+              "max": 255107072
+            },
+            "wsPriv": {
+              "median": 116387840,
+              "min": 115183616,
+              "max": 116391936
+            }
+          },
+          "during": {
+            "ticks": 72,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 510357504,
+              "min": 403415040,
+              "max": 548691968
+            },
+            "priv": {
+              "median": 383619072,
+              "min": 273080320,
+              "max": 423432192
+            },
+            "wsPriv": {
+              "median": 237473792,
+              "min": 132767744,
+              "max": 275136512
+            }
+          },
+          "after": {
+            "ticks": 21,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 543088640,
+              "min": 543064064,
+              "max": 543129600
+            },
+            "priv": {
+              "median": 413913088,
+              "min": 413913088,
+              "max": 413995008
+            },
+            "wsPriv": {
+              "median": 269721600,
+              "min": 269721600,
+              "max": 269787136
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8962162688,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 351,
+          "actionMs": 7194,
+          "before": {
+            "ticks": 29,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 388255744,
+              "min": 386269184,
+              "max": 388304896
+            },
+            "priv": {
+              "median": 257015808,
+              "min": 250392576,
+              "max": 257024000
+            },
+            "wsPriv": {
+              "median": 118083584,
+              "min": 117211136,
+              "max": 118087680
+            }
+          },
+          "during": {
+            "ticks": 72,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 505665536,
+              "min": 391016448,
+              "max": 557047808
+            },
+            "priv": {
+              "median": 378759168,
+              "min": 259817472,
+              "max": 432111616
+            },
+            "wsPriv": {
+              "median": 232673280,
+              "min": 120803328,
+              "max": 283357184
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 556482560,
+              "min": 556457984,
+              "max": 556523520
+            },
+            "priv": {
+              "median": 431718400,
+              "min": 431718400,
+              "max": 431800320
+            },
+            "wsPriv": {
+              "median": 283013120,
+              "min": 283013120,
+              "max": 283078656
+            }
+          }
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 351,
+          "min": 349,
+          "max": 360,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 7201,
+          "min": 7166,
+          "max": 7230,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 386447360,
+              "min": 386072576,
+              "max": 389515264,
+              "n": 5
+            },
+            "peak": {
+              "median": 386506752,
+              "min": 386129920,
+              "max": 389574656,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 255098880,
+              "min": 252952576,
+              "max": 257015808,
+              "n": 5
+            },
+            "peak": {
+              "median": 255107072,
+              "min": 252956672,
+              "max": 257024000,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 116387840,
+              "min": 115892224,
+              "max": 118730752,
+              "n": 5
+            },
+            "peak": {
+              "median": 116391936,
+              "min": 115900416,
+              "max": 118734848,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 505942016,
+              "min": 501518336,
+              "max": 510357504,
+              "n": 5
+            },
+            "peak": {
+              "median": 554778624,
+              "min": 548691968,
+              "max": 557047808,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 378759168,
+              "min": 372211712,
+              "max": 383619072,
+              "n": 5
+            },
+            "peak": {
+              "median": 427241472,
+              "min": 423432192,
+              "max": 432111616,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 232673280,
+              "min": 228306944,
+              "max": 237473792,
+              "n": 5
+            },
+            "peak": {
+              "median": 281088000,
+              "min": 275136512,
+              "max": 283357184,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 553660416,
+              "min": 543088640,
+              "max": 556482560,
+              "n": 5
+            },
+            "peak": {
+              "median": 553697280,
+              "min": 543129600,
+              "max": 556523520,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 426852352,
+              "min": 413913088,
+              "max": 431718400,
+              "n": 5
+            },
+            "peak": {
+              "median": 426930176,
+              "min": 413995008,
+              "max": 431800320,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 280031232,
+              "min": 269721600,
+              "max": 283013120,
+              "n": 5
+            },
+            "peak": {
+              "median": 280092672,
+              "min": 269787136,
+              "max": 283078656,
+              "n": 5
+            }
+          }
+        }
+      }
+    },
+    "continuous": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 8965668864,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 352,
+          "actionMs": 93472,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 389117952,
+              "min": 386846720,
+              "max": 389181440
+            },
+            "priv": {
+              "median": 255651840,
+              "min": 248758272,
+              "max": 255660032
+            },
+            "wsPriv": {
+              "median": 118665216,
+              "min": 117497856,
+              "max": 118673408
+            }
+          },
+          "during": {
+            "ticks": 935,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1546309632,
+              "min": 388767744,
+              "max": 2181197824
+            },
+            "priv": {
+              "median": 1413578752,
+              "min": 255516672,
+              "max": 2105081856
+            },
+            "wsPriv": {
+              "median": 1261965312,
+              "min": 118542336,
+              "max": 1896505344
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1859153920,
+              "min": 1857908736,
+              "max": 1894457344
+            },
+            "priv": {
+              "median": 1730142208,
+              "min": 1729093632,
+              "max": 1766146048
+            },
+            "wsPriv": {
+              "median": 1575141376,
+              "min": 1573896192,
+              "max": 1610444800
+            }
+          },
+          "iterations": 20,
+          "privAtIteration": [
+            1222520832,
+            1362485248,
+            1356853248,
+            1379753984,
+            1353179136,
+            1507377152,
+            1422336000,
+            1403060224,
+            1368031232,
+            1376313344,
+            1369010176,
+            1389314048,
+            1355759616,
+            1340870656,
+            1388969984,
+            1561952256,
+            1380696064,
+            1560657920,
+            1645023232,
+            1771421696
+          ],
+          "privSlopeBytesPerIteration": 14121957.822556391,
+          "privSlopeSecondHalf": 40779502.93333333
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8928825344,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 379,
+          "actionMs": 93072,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385189888,
+              "min": 378118144,
+              "max": 385634304
+            },
+            "priv": {
+              "median": 253095936,
+              "min": 236535808,
+              "max": 255434752
+            },
+            "wsPriv": {
+              "median": 114999296,
+              "min": 109821952,
+              "max": 116531200
+            }
+          },
+          "during": {
+            "ticks": 931,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1544474624,
+              "min": 388419584,
+              "max": 2140729344
+            },
+            "priv": {
+              "median": 1413365760,
+              "min": 256184320,
+              "max": 2014031872
+            },
+            "wsPriv": {
+              "median": 1257394176,
+              "min": 118181888,
+              "max": 1853259776
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1752940544,
+              "min": 1717915648,
+              "max": 1753825280
+            },
+            "priv": {
+              "median": 1609121792,
+              "min": 1573519360,
+              "max": 1610121216
+            },
+            "wsPriv": {
+              "median": 1466073088,
+              "min": 1431048192,
+              "max": 1466957824
+            }
+          },
+          "iterations": 20,
+          "privAtIteration": [
+            1223426048,
+            1355833344,
+            1350311936,
+            1373937664,
+            1352646656,
+            1503682560,
+            1418313728,
+            1399140352,
+            1365020672,
+            1376419840,
+            1360855040,
+            1384431616,
+            1355165696,
+            1336467456,
+            1386016768,
+            1383026688,
+            1349865472,
+            1534640128,
+            1613230080,
+            1616244736
+          ],
+          "privSlopeBytesPerIteration": 9636348.15037594,
+          "privSlopeSecondHalf": 29301046.303030305
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8937005056,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 359,
+          "actionMs": 93348,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 391235584,
+              "min": 383557632,
+              "max": 391290880
+            },
+            "priv": {
+              "median": 257687552,
+              "min": 240443392,
+              "max": 257691648
+            },
+            "wsPriv": {
+              "median": 120803328,
+              "min": 115015680,
+              "max": 120807424
+            }
+          },
+          "during": {
+            "ticks": 934,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1773996032,
+              "min": 390963200,
+              "max": 2401714176
+            },
+            "priv": {
+              "median": 1633454080,
+              "min": 257585152,
+              "max": 2314276864
+            },
+            "wsPriv": {
+              "median": 1485686784,
+              "min": 120762368,
+              "max": 2114072576
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1911070720,
+              "min": 1876254720,
+              "max": 1911799808
+            },
+            "priv": {
+              "median": 1767772160,
+              "min": 1731997696,
+              "max": 1768849408
+            },
+            "wsPriv": {
+              "median": 1623949312,
+              "min": 1589133312,
+              "max": 1624678400
+            }
+          },
+          "iterations": 20,
+          "privAtIteration": [
+            1225662464,
+            1366323200,
+            1352249344,
+            1377579008,
+            1357996032,
+            1335398400,
+            1562411008,
+            1665818624,
+            1613754368,
+            1620463616,
+            1617129472,
+            1633443840,
+            1598001152,
+            1583112192,
+            1687515136,
+            1860177920,
+            1891966976,
+            1931710464,
+            1755922432,
+            1774989312
+          ],
+          "privSlopeBytesPerIteration": 30822529.347368423,
+          "privSlopeSecondHalf": 30580984.242424242
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8820105216,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 353,
+          "actionMs": 93122,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 386279424,
+              "min": 384225280,
+              "max": 386359296
+            },
+            "priv": {
+              "median": 255770624,
+              "min": 249110528,
+              "max": 255807488
+            },
+            "wsPriv": {
+              "median": 115671040,
+              "min": 114712576,
+              "max": 115720192
+            }
+          },
+          "during": {
+            "ticks": 932,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1548943360,
+              "min": 386117632,
+              "max": 2182336512
+            },
+            "priv": {
+              "median": 1418891264,
+              "min": 255463424,
+              "max": 2105159680
+            },
+            "wsPriv": {
+              "median": 1264431104,
+              "min": 115720192,
+              "max": 1897566208
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1876672512,
+              "min": 1858240512,
+              "max": 1894719488
+            },
+            "priv": {
+              "median": 1748105216,
+              "min": 1729466368,
+              "max": 1766531072
+            },
+            "wsPriv": {
+              "median": 1592516608,
+              "min": 1574084608,
+              "max": 1610563584
+            }
+          },
+          "iterations": 20,
+          "privAtIteration": [
+            1221980160,
+            1361559552,
+            1355276288,
+            1376768000,
+            1355423744,
+            1515261952,
+            1452761088,
+            1401794560,
+            1375973376,
+            1384706048,
+            1375703040,
+            1389514752,
+            1356623872,
+            1342742528,
+            1390764032,
+            1569861632,
+            1379356672,
+            1564647424,
+            1649917952,
+            1771843584
+          ],
+          "privSlopeBytesPerIteration": 14133602.165413534,
+          "privSlopeSecondHalf": 40709970.23030303
+        },
+        {
+          "machine": {
+            "freeMemBytes": 8822005760,
+            "totalMemBytes": 17042706432
+          },
+          "readyMs": 359,
+          "actionMs": 93146,
+          "before": {
+            "ticks": 30,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 385497088,
+              "min": 383410176,
+              "max": 385548288
+            },
+            "priv": {
+              "median": 254197760,
+              "min": 247492608,
+              "max": 254197760
+            },
+            "wsPriv": {
+              "median": 115642368,
+              "min": 114663424,
+              "max": 115650560
+            }
+          },
+          "during": {
+            "ticks": 932,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1550802944,
+              "min": 385175552,
+              "max": 2157948928
+            },
+            "priv": {
+              "median": 1418141696,
+              "min": 254087168,
+              "max": 2035990528
+            },
+            "wsPriv": {
+              "median": 1266835456,
+              "min": 115539968,
+              "max": 1873637376
+            }
+          },
+          "after": {
+            "ticks": 20,
+            "processes": {
+              "median": 5,
+              "min": 5,
+              "max": 5
+            },
+            "ws": {
+              "median": 1749401600,
+              "min": 1713860608,
+              "max": 1750151168
+            },
+            "priv": {
+              "median": 1608044544,
+              "min": 1571987456,
+              "max": 1609367552
+            },
+            "wsPriv": {
+              "median": 1465884672,
+              "min": 1430339584,
+              "max": 1466634240
+            }
+          },
+          "iterations": 20,
+          "privAtIteration": [
+            1222967296,
+            1352876032,
+            1347973120,
+            1373245440,
+            1353441280,
+            1507082240,
+            1422401536,
+            1400512512,
+            1368133632,
+            1376837632,
+            1362112512,
+            1388974080,
+            1354850304,
+            1337528320,
+            1388953600,
+            1390129152,
+            1530675200,
+            1627959296,
+            1598341120,
+            1617260544
+          ],
+          "privSlopeBytesPerIteration": 12388450.55037594,
+          "privSlopeSecondHalf": 34594319.515151516
+        }
+      ],
+      "summary": {
+        "readyMs": {
+          "median": 359,
+          "min": 352,
+          "max": 379,
+          "n": 5
+        },
+        "actionMs": {
+          "median": 93146,
+          "min": 93072,
+          "max": 93472,
+          "n": 5
+        },
+        "before": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 386279424,
+              "min": 385189888,
+              "max": 391235584,
+              "n": 5
+            },
+            "peak": {
+              "median": 386359296,
+              "min": 385548288,
+              "max": 391290880,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 255651840,
+              "min": 253095936,
+              "max": 257687552,
+              "n": 5
+            },
+            "peak": {
+              "median": 255660032,
+              "min": 254197760,
+              "max": 257691648,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 115671040,
+              "min": 114999296,
+              "max": 120803328,
+              "n": 5
+            },
+            "peak": {
+              "median": 116531200,
+              "min": 115650560,
+              "max": 120807424,
+              "n": 5
+            }
+          }
+        },
+        "during": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 1548943360,
+              "min": 1544474624,
+              "max": 1773996032,
+              "n": 5
+            },
+            "peak": {
+              "median": 2181197824,
+              "min": 2140729344,
+              "max": 2401714176,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 1418141696,
+              "min": 1413365760,
+              "max": 1633454080,
+              "n": 5
+            },
+            "peak": {
+              "median": 2105081856,
+              "min": 2014031872,
+              "max": 2314276864,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 1264431104,
+              "min": 1257394176,
+              "max": 1485686784,
+              "n": 5
+            },
+            "peak": {
+              "median": 1896505344,
+              "min": 1853259776,
+              "max": 2114072576,
+              "n": 5
+            }
+          }
+        },
+        "after": {
+          "processes": {
+            "median": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            },
+            "peak": {
+              "median": 5,
+              "min": 5,
+              "max": 5,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 1859153920,
+              "min": 1749401600,
+              "max": 1911070720,
+              "n": 5
+            },
+            "peak": {
+              "median": 1894457344,
+              "min": 1750151168,
+              "max": 1911799808,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 1730142208,
+              "min": 1608044544,
+              "max": 1767772160,
+              "n": 5
+            },
+            "peak": {
+              "median": 1766146048,
+              "min": 1609367552,
+              "max": 1768849408,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 1575141376,
+              "min": 1465884672,
+              "max": 1623949312,
+              "n": 5
+            },
+            "peak": {
+              "median": 1610444800,
+              "min": 1466634240,
+              "max": 1624678400,
+              "n": 5
+            }
+          }
+        },
+        "privSlopeBytesPerIteration": {
+          "median": 14121957.822556391,
+          "min": 9636348.15037594,
+          "max": 30822529.347368423,
+          "n": 5
+        },
+        "privSlopeSecondHalf": {
+          "median": 34594319.515151516,
+          "min": 29301046.303030305,
+          "max": 40779502.93333333,
+          "n": 5
+        }
+      }
+    }
+  },
+  "warmUpReadyMs": 6694,
+  "serverHits": {
+    "/bench/large-json": 105
+  },
+  "finishedAt": "2026-10-28T09:07:42.106Z"
+}

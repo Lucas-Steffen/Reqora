@@ -36,3 +36,26 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 
 **Limitações do ambiente**
 - O amostrador só existe para Windows; Linux e macOS não foram validados.
+
+## 2026-10-28 — TASK-003: baseline Electron
+
+**Feito**
+- `scripts/bench/electron.mjs` (`pnpm bench:electron`) roda os 8 cenários com 5 execuções cada, a partir do build de produção.
+- `scripts/bench/report.mjs` gera as tabelas.
+- Dados brutos em `docs/migration/bench-results/electron/`; resultados e lacunas em `BENCHMARKS.md`.
+
+**Evidências**
+- Foram 35 de 35 execuções válidas. Em memória privada, mediana (mín–máx):
+
+| Cenário | Valor |
+|---|---|
+| T+5 s | 232 (232–235) MiB |
+| Fim do ocioso | 217 (216–220) MiB |
+| Pico com a resposta grande | 1.167 MiB |
+| Pico no uso contínuo | 2.008 MiB |
+
+- `pnpm typecheck` verde; `pnpm test` 13 arquivos, 140 testes verdes; `pnpm build` verde. O smoke Electron não foi rodado, porque a TASK não altera o host (só scripts de bench e docs).
+
+**Limitações do ambiente**
+- O primeiro lançamento a frio pode passar de 60 s; um lançamento de aquecimento é descartado antes das medições.
+- Só o Windows foi medido.
