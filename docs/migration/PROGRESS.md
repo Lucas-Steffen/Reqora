@@ -72,3 +72,18 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 
 **Limitações**
 - A migração não foi exercitada sobre a cópia do perfil real de `%APPDATA%\reqora`; só nos testes.
+
+## 2026-10-28 — TASK-005: toolchain (BLOCKED) e adapter da TASK-006
+
+**Feito**
+- Rust instalado via winget: rustup 1.29.1, rustc 1.99.1, cargo 1.99.1, toolchain `stable-x86_64-pc-windows-msvc`.
+- Adiantado da TASK-006 (só TypeScript, não depende do toolchain): módulo `src/renderer/src/platform/` com a detecção do host (Electron por `window.reqora`, Tauri por `__TAURI_INTERNALS__`, senão navegador) e o adapter `memory`. Os três gateways e `preferences.ts` passam a pedir o backend a esse módulo em vez de ler `window.reqora`.
+
+**Evidências**
+- `pnpm typecheck` verde; `pnpm test` 16 arquivos, 155 testes verdes (4 novos); `pnpm build` verde.
+- `pnpm smoke:electron`: 5 cenários verdes.
+
+**Bloqueio**
+- O instalador do VS Build Tools 2022 terminou com o código 1602: o prompt do UAC foi negado ou fechado. Sem `link.exe`, nada em Rust compila. Para desbloquear, rodar num terminal de administrador:
+  `winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"`
+- O resto da TASK-006 (scaffold, CSP/capabilities, build release) e a TASK-007 esperam esse passo.
