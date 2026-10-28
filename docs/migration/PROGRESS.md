@@ -86,4 +86,5 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 **Bloqueio**
 - O instalador do VS Build Tools 2022 terminou com o código 1602: o prompt do UAC foi negado ou fechado. Sem `link.exe`, nada em Rust compila. Para desbloquear, rodar num terminal de administrador:
   `winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"`
+- Duas novas tentativas (segundo plano e aba visível do terminal) também terminaram com 1602.
 - O resto da TASK-006 (scaffold, CSP/capabilities, build release) e a TASK-007 esperam esse passo.
