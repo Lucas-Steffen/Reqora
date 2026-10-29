@@ -155,3 +155,16 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - `pnpm typecheck`, `pnpm test` (179), `pnpm build` e `pnpm smoke:electron` verdes.
 
 **Próximo:** TASK-010, cofre de segredos.
+
+## 2026-10-28 — TASK-010: Cofre de segredos (DONE)
+
+**Feito**
+- `SecretVault` em Rust: chave-mestra no keyring do SO e `secrets.v2.json` com AES-256-GCM (ADR-008).
+- Store extrai segredos antes de gravar e anota `hasStoredSecret` ao carregar; command `secret_reveal`.
+- Áreas `workspace` e `secrets` ligadas no adapter Tauri.
+
+**Evidências**
+- `cargo test` (32) e `cargo clippy --all-targets -- -D warnings` verdes; testes de segredos de `environments` e `projects` portados.
+- `pnpm typecheck`, `pnpm test` (179), `pnpm build` e `pnpm smoke:electron` verdes.
+
+**Próximo:** TASK-011, migração dos segredos do Electron (DPAPI).

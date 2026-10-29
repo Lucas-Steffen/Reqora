@@ -135,3 +135,19 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas:** structs tipadas em Rust (duplicaria o schema e descartaria campos desconhecidos); `serde_json::to_vec_pretty` puro (bytes diferentes: `1.0`, `1e-7`, ordem de chaves).
 
 **Consequências:** uma fixture compartilhada (`src/shared/contract/workspace-store/`) prova a igualdade de bytes nos dois lados; mudanças no serializador precisam mantê-la verde.
+
+## ADR-008 — Cofre de segredos: chave-mestra no keyring e AES-256-GCM em arquivo
+
+**Estado:** Aceita (TASK-010)
+
+**Contexto:** o Electron cifra segredos com `safeStorage` em `secrets.json`. O Tauri não tem `safeStorage`, e o WebView não deve receber segredos em texto puro.
+
+**Decisão**
+- Uma chave-mestra aleatória de 256 bits fica no keyring do SO (crate `keyring` 4.2, serviço `reqora`).
+- Os valores ficam em `secrets.v2.json`, versionado, cada um com AES-256-GCM e nonce próprio. O `secrets.json` legado nunca é sobrescrito; a migração dele é a TASK-011.
+- Fail-closed: sem keyring, salvar segredos falha com a mensagem atual do Electron e nada é gravado; variáveis não secretas continuam salvando.
+- Regras do Electron mantidas: extração em todos os ambientes de todos os projetos, `copySecretFrom`, remoção de órfãos e `reveal` só para variável secreta do workspace gravado.
+
+**Alternativas:** uma entrada no keyring por segredo (limite de cerca de 2,5 KB por credencial no Windows e muitas entradas); Stronghold (não é mais recomendado pelo Tauri).
+
+**Consequências:** perder a entrada do keyring torna `secrets.v2.json` ilegível; os valores ficam sem `hasStoredSecret` e precisam ser redefinidos. Testes usam um provedor de chave em memória.
