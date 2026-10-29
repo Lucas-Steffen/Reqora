@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path'
 import { DEFAULT_OUT, writeFixtures } from './fixtures.mjs'
 import { startBenchServer } from './server.mjs'
 import { median, startSampler, totalsByTick } from './sampler.mjs'
+import { at, window } from './stats.mjs'
 
 /**
  * Electron baseline (TASK-003). Run `pnpm build` first, then:
@@ -45,22 +46,6 @@ async function freshProfile() {
 
 function killTree(pid) {
   try { execFileSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' }) } catch { /* already gone */ }
-}
-
-/** { median, min, max } of each metric over the ticks in [from, to]. */
-function window(ticks, from, to) {
-  const inside = ticks.filter(tick => tick.t >= from && tick.t <= to)
-  if (!inside.length) return null
-  const stats = key => {
-    const values = inside.map(tick => tick[key])
-    return { median: median(values), min: Math.min(...values), max: Math.max(...values) }
-  }
-  return { ticks: inside.length, processes: stats('processes'), ws: stats('ws'), priv: stats('priv'), wsPriv: stats('wsPriv') }
-}
-
-/** The tick closest to `t`. */
-function at(ticks, t) {
-  return ticks.reduce((best, tick) => Math.abs(tick.t - t) < Math.abs(best.t - t) ? tick : best)
 }
 
 /** Least-squares slope of y over x. */

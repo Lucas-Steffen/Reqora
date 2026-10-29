@@ -23,6 +23,7 @@
     "smoke:electron": "node scripts/smoke-electron.mjs",
     "bench:fixtures": "node scripts/bench/fixtures.mjs --check",
     "bench:electron": "node scripts/bench/electron.mjs",
+    "bench:tauri": "node scripts/bench/tauri.mjs",
     "bench:selftest": "node scripts/bench/sampler-selftest.mjs"
   },
   "dependencies": {

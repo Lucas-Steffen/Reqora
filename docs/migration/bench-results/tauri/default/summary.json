@@ -1,0 +1,471 @@
+{
+  "host": "tauri",
+  "label": "default",
+  "webView2Version": "156.0.4314.50",
+  "startedAt": "2026-10-29T01:21:02.331Z",
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "cores": 12,
+    "totalMemBytes": 17042706432,
+    "os": "10.0.26200",
+    "node": "v24.21.0"
+  },
+  "method": {
+    "runs": 5,
+    "warmUpLaunch": true,
+    "samplerIntervalMs": 100,
+    "executable": "src-tauri/target/bench/release/reqora.exe"
+  },
+  "fixtures": {
+    "workspace-10x100.json": {
+      "sha256": "55ab24b17daccac817711e9b04b529a09de9f3c6d10eaaed13c829c56a901608",
+      "bytes": 1338440
+    }
+  },
+  "scenarios": {
+    "startup-idle": {
+      "runs": [
+        {
+          "machine": {
+            "freeMemBytes": 3849924608,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 744,
+          "startupAt5s": {
+            "processes": 7,
+            "ws": 383102976,
+            "priv": 210264064,
+            "wsPriv": 109416448
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 7
+            },
+            "ws": {
+              "median": 385118208,
+              "min": 379351040,
+              "max": 393334784
+            },
+            "priv": {
+              "median": 202731520,
+              "min": 198057984,
+              "max": 211501056
+            },
+            "wsPriv": {
+              "median": 103104512,
+              "min": 99622912,
+              "max": 110252032
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 7
+            },
+            "ws": {
+              "median": 380608512,
+              "min": 379351040,
+              "max": 386285568
+            },
+            "priv": {
+              "median": 198617088,
+              "min": 198057984,
+              "max": 201113600
+            },
+            "wsPriv": {
+              "median": 100128768,
+              "min": 99622912,
+              "max": 102252544
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 3933433856,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 550,
+          "startupAt5s": {
+            "processes": 7,
+            "ws": 383447040,
+            "priv": 211591168,
+            "wsPriv": 109592576
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 398174208,
+              "min": 383447040,
+              "max": 407334912
+            },
+            "priv": {
+              "median": 196591616,
+              "min": 191414272,
+              "max": 218062848
+            },
+            "wsPriv": {
+              "median": 106131456,
+              "min": 102309888,
+              "max": 115073024
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 392456192,
+              "min": 391221248,
+              "max": 398340096
+            },
+            "priv": {
+              "median": 192032768,
+              "min": 191414272,
+              "max": 194609152
+            },
+            "wsPriv": {
+              "median": 102858752,
+              "min": 102309888,
+              "max": 105160704
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 3892047872,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 553,
+          "startupAt5s": {
+            "processes": 7,
+            "ws": 384217088,
+            "priv": 211812352,
+            "wsPriv": 110297088
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 7
+            },
+            "ws": {
+              "median": 385949696,
+              "min": 379351040,
+              "max": 394432512
+            },
+            "priv": {
+              "median": 204066816,
+              "min": 199454720,
+              "max": 213078016
+            },
+            "wsPriv": {
+              "median": 103346176,
+              "min": 100077568,
+              "max": 111132672
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 7
+            },
+            "ws": {
+              "median": 381280256,
+              "min": 379351040,
+              "max": 386850816
+            },
+            "priv": {
+              "median": 199835648,
+              "min": 199454720,
+              "max": 202395648
+            },
+            "wsPriv": {
+              "median": 100356096,
+              "min": 100077568,
+              "max": 102580224
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 4238094336,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 535,
+          "startupAt5s": {
+            "processes": 7,
+            "ws": 383983616,
+            "priv": 211914752,
+            "wsPriv": 110161920
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 386881536,
+              "min": 379961344,
+              "max": 394174464
+            },
+            "priv": {
+              "median": 204558336,
+              "min": 199929856,
+              "max": 213135360
+            },
+            "wsPriv": {
+              "median": 103514112,
+              "min": 100012032,
+              "max": 110956544
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 381128704,
+              "min": 379961344,
+              "max": 390201344
+            },
+            "priv": {
+              "median": 200560640,
+              "min": 199929856,
+              "max": 202973184
+            },
+            "wsPriv": {
+              "median": 100605952,
+              "min": 100012032,
+              "max": 102670336
+            }
+          }
+        },
+        {
+          "machine": {
+            "freeMemBytes": 4198711296,
+            "totalMemBytes": 17042706432
+          },
+          "samplerFirstTickMs": 544,
+          "startupAt5s": {
+            "processes": 7,
+            "ws": 385638400,
+            "priv": 214675456,
+            "wsPriv": 111890432
+          },
+          "idle60s": {
+            "ticks": 600,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 388515840,
+              "min": 381546496,
+              "max": 399429632
+            },
+            "priv": {
+              "median": 206716928,
+              "min": 202305536,
+              "max": 215920640
+            },
+            "wsPriv": {
+              "median": 105238528,
+              "min": 101990400,
+              "max": 112709632
+            }
+          },
+          "idleEnd": {
+            "ticks": 50,
+            "processes": {
+              "median": 7,
+              "min": 7,
+              "max": 8
+            },
+            "ws": {
+              "median": 382865408,
+              "min": 381546496,
+              "max": 399429632
+            },
+            "priv": {
+              "median": 202887168,
+              "min": 202305536,
+              "max": 209190912
+            },
+            "wsPriv": {
+              "median": 102531072,
+              "min": 101990400,
+              "max": 104382464
+            }
+          }
+        }
+      ],
+      "summary": {
+        "startupAt5s": {
+          "processes": {
+            "median": 7,
+            "min": 7,
+            "max": 7,
+            "n": 5
+          },
+          "ws": {
+            "median": 383983616,
+            "min": 383102976,
+            "max": 385638400,
+            "n": 5
+          },
+          "priv": {
+            "median": 211812352,
+            "min": 210264064,
+            "max": 214675456,
+            "n": 5
+          },
+          "wsPriv": {
+            "median": 110161920,
+            "min": 109416448,
+            "max": 111890432,
+            "n": 5
+          }
+        },
+        "idle60s": {
+          "processes": {
+            "median": {
+              "median": 7,
+              "min": 7,
+              "max": 7,
+              "n": 5
+            },
+            "peak": {
+              "median": 8,
+              "min": 7,
+              "max": 8,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 386881536,
+              "min": 385118208,
+              "max": 398174208,
+              "n": 5
+            },
+            "peak": {
+              "median": 394432512,
+              "min": 393334784,
+              "max": 407334912,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 204066816,
+              "min": 196591616,
+              "max": 206716928,
+              "n": 5
+            },
+            "peak": {
+              "median": 213135360,
+              "min": 211501056,
+              "max": 218062848,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 103514112,
+              "min": 103104512,
+              "max": 106131456,
+              "n": 5
+            },
+            "peak": {
+              "median": 111132672,
+              "min": 110252032,
+              "max": 115073024,
+              "n": 5
+            }
+          }
+        },
+        "idleEnd": {
+          "processes": {
+            "median": {
+              "median": 7,
+              "min": 7,
+              "max": 7,
+              "n": 5
+            },
+            "peak": {
+              "median": 8,
+              "min": 7,
+              "max": 8,
+              "n": 5
+            }
+          },
+          "ws": {
+            "median": {
+              "median": 381280256,
+              "min": 380608512,
+              "max": 392456192,
+              "n": 5
+            },
+            "peak": {
+              "median": 390201344,
+              "min": 386285568,
+              "max": 399429632,
+              "n": 5
+            }
+          },
+          "priv": {
+            "median": {
+              "median": 199835648,
+              "min": 192032768,
+              "max": 202887168,
+              "n": 5
+            },
+            "peak": {
+              "median": 202395648,
+              "min": 194609152,
+              "max": 209190912,
+              "n": 5
+            }
+          },
+          "wsPriv": {
+            "median": {
+              "median": 100605952,
+              "min": 100128768,
+              "max": 102858752,
+              "n": 5
+            },
+            "peak": {
+              "median": 102670336,
+              "min": 102252544,
+              "max": 105160704,
+              "n": 5
+            }
+          }
+        }
+      }
+    }
+  },
+  "finishedAt": "2026-10-29T01:26:45.882Z"
+}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createMemoryWorkspaceRepository, StaleRevisionError, type WorkspaceRepository } from '../../workspace/repository'
+import { createMemoryWorkspaceRepository, isWorkspace, normalizeWorkspace, StaleRevisionError, type WorkspaceRepository } from '../../workspace/repository'
 import type { Workspace } from '../../workspace/types'
 import type { ReqoraApi } from '../../shared/api'
 import { desktopApi } from './platform'
@@ -17,9 +17,30 @@ export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepositor
   }
 }
 
+/**
+ * In-memory repository whose initial workspace is fetched from `url` on first
+ * load. Only bench builds use it (VITE_REQORA_BENCH_WORKSPACE), so the Tauri
+ * prototype can open the same fixture the Electron baseline opens.
+ */
+export function createFetchedWorkspaceRepository(url: string, fetcher: typeof fetch = fetch): WorkspaceRepository {
+  let inner: Promise<WorkspaceRepository> | undefined
+  const ready = () => inner ??= fetcher(url).then(async response => {
+    if (!response.ok) throw new Error(`Bench workspace request failed with ${response.status}`)
+    const value: unknown = await response.json()
+    if (!isWorkspace(value)) throw new Error('Bench workspace is not a workspace')
+    return createMemoryWorkspaceRepository(normalizeWorkspace(value))
+  })
+  return {
+    load: async () => (await ready()).load(),
+    save: async workspace => (await ready()).save(workspace)
+  }
+}
+
 export function defaultWorkspaceRepository(): WorkspaceRepository {
   const api = desktopApi()
-  return api ? createIpcWorkspaceRepository(api) : createMemoryWorkspaceRepository()
+  if (api) return createIpcWorkspaceRepository(api)
+  const bench = import.meta.env.VITE_REQORA_BENCH_WORKSPACE
+  return bench ? createFetchedWorkspaceRepository(bench) : createMemoryWorkspaceRepository()
 }
 
 export interface WorkspaceState {
