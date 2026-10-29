@@ -103,3 +103,19 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas.** Com o Go, Qt 6 e Avalonia 12 não são prototipados (ADR-001).
 
 **Consequências.** A Fase C começa pela TASK-008. A Fase E (remoção do Electron) continua condicionada à paridade funcional. Se a TASK-017 mostrar que o Tauri perde nos cenários de carga, este ADR é revisto com os números.
+
+## ADR-006 — Adapter Tauri com áreas ligadas por flag e fallback por área
+
+**Estado:** Aceito (TASK-008).
+
+**Contexto.** O backend Rust chega em partes ao longo da Fase C: workspace (TASK-009), segredos (TASK-010), envio (TASK-012) e import (TASK-013). Enquanto isso, o build Tauri precisa continuar abrindo a UI, e o Electron precisa continuar intacto.
+
+**Decisão.**
+- `detectPlatform` verifica `__TAURI_INTERNALS__` antes de `window.reqora`, e só então cai para o navegador.
+- `createTauriApi` só inclui uma área do contrato quando a flag dela em `TAURI_BACKEND` é verdadeira. Cada TASK liga a sua junto com os commands Rust.
+- Os gateways escolhem **por área**: usam a área do desktop se ela existir e, senão, o fallback em página que já existia (memory, navegador). Nenhum gateway assume que `desktopApi()` é completa.
+- Nomes de commands, parâmetros e o formato `{ code, message }` dos erros ficam numa fixture JSON lida pelos testes dos dois lados. Não há geração de código.
+
+**Alternativas.** Um adapter tudo-ou-nada, que deixaria o Tauri no adapter memory até a TASK-013, impediria validar cada área assim que ela existe. Gerar os tipos (ts-rs, specta) acrescentaria dependências e um passo de build sem necessidade comprovada para 10 commands.
+
+**Consequências.** No Tauri, uma área sem backend usa dados só em memória, o que é esperado durante a Fase C e não vale como paridade. A TASK-026 confere que todas as flags estão ligadas antes de remover o Electron.

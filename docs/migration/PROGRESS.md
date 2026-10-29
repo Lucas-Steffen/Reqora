@@ -130,3 +130,15 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
   - O ganho é de cerca de 12% e vale só para inicialização e ocioso.
 
 **Próximo:** Fase C, começando pela TASK-008 (camada IPC tipada).
+
+## 2026-10-28 — TASK-008: camada IPC tipada (DONE)
+
+**Feito**
+- Adapter Tauri do contrato `ReqoraApi` em `platform/tauri.ts`, com erros tipados (`PlatformError`) e áreas ligadas por flag. Seleção Tauri → Electron → navegador, com fallback por área (ADR-006).
+- Fixture de contrato `src/shared/contract/ipc-commands.json`, conferida no vitest e no `cargo test` (`src-tauri/src/ipc.rs`).
+
+**Evidências**
+- `pnpm typecheck`, `pnpm test` (175), `pnpm build` e `pnpm smoke:electron` (5 cenários) verdes.
+- `cargo test` (3) e `cargo clippy --all-targets -- -D warnings` verdes.
+
+**Próximo:** TASK-009, store de workspace em Rust.
