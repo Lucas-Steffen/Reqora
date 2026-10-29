@@ -142,3 +142,16 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - `cargo test` (3) e `cargo clippy --all-targets -- -D warnings` verdes.
 
 **Próximo:** TASK-009, store de workspace em Rust.
+
+## 2026-10-28 — TASK-009: Store de workspace em Rust (DONE)
+
+**Feito**
+- `WorkspaceStore` em Rust com escrita atômica, limite de 64 MiB, revisões, backup e `.corrupt-<ms>`; workspace como JSON opaco e serializador idêntico ao `JSON.stringify` (ADR-007).
+- Cópia única do perfil Electron com SHA-256 e `legacy-import.json`.
+- Commands `workspace_load`/`workspace_save`; o adapter normaliza (v1→v2) em TS. Área ainda desligada até a TASK-010.
+
+**Evidências**
+- `cargo test` (20) e `cargo clippy --all-targets -- -D warnings` verdes; fixture de bytes idêntica nos dois stores.
+- `pnpm typecheck`, `pnpm test` (179), `pnpm build` e `pnpm smoke:electron` verdes.
+
+**Próximo:** TASK-010, cofre de segredos.

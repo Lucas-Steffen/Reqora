@@ -12,7 +12,7 @@ Estados: `TODO`, `IN_PROGRESS`, `BLOCKED`, `REVIEW`, `DONE`. Uma TASK só fica `
 | [TASK-006](tasks/TASK-006.md) | B | Scaffold de src-tauri | Alta | TASK-005 | DONE |
 | [TASK-007](tasks/TASK-007.md) | B | Gate de memória e ADR de go/no-go | Crítica | TASK-003, TASK-006 | DONE |
 | [TASK-008](tasks/TASK-008.md) | C | Camada IPC tipada (platform/) | Alta | TASK-007 | DONE |
-| [TASK-009](tasks/TASK-009.md) | C | Store de workspace em Rust | Alta | TASK-008 | TODO |
+| [TASK-009](tasks/TASK-009.md) | C | Store de workspace em Rust | Alta | TASK-008 | DONE |
 | [TASK-010](tasks/TASK-010.md) | C | Cofre de segredos | Alta | TASK-009 | TODO |
 | [TASK-011](tasks/TASK-011.md) | C | Migração de segredos do Electron (DPAPI) | Alta | TASK-010 | TODO |
 | [TASK-012](tasks/TASK-012.md) | C | Envio HTTP com reqwest | Alta | TASK-010 | TODO |

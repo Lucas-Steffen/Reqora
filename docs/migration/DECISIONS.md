@@ -119,3 +119,19 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas.** Um adapter tudo-ou-nada, que deixaria o Tauri no adapter memory até a TASK-013, impediria validar cada área assim que ela existe. Gerar os tipos (ts-rs, specta) acrescentaria dependências e um passo de build sem necessidade comprovada para 10 commands.
 
 **Consequências.** No Tauri, uma área sem backend usa dados só em memória, o que é esperado durante a Fase C e não vale como paridade. A TASK-026 confere que todas as flags estão ligadas antes de remover o Electron.
+
+## ADR-007 — Store de workspace em Rust como JSON opaco
+
+**Estado:** Aceita (TASK-009)
+
+**Contexto:** o arquivo `workspace.json` precisa continuar no mesmo formato e com os mesmos bytes, para que Electron e Tauri convivam até a Fase E sem diffs espúrios nem perda de campos.
+
+**Decisão**
+- O Rust guarda o workspace como `serde_json::Value` com `preserve_order` e `float_roundtrip`, e grava com um formatter que segue `JSON.stringify(value, null, 2)` (números ECMAScript, chaves de índice primeiro).
+- O Rust valida só o envelope; schema, normalização e migração v1→v2 continuam em TypeScript, no adapter.
+- O perfil Electron é copiado uma única vez, com SHA-256 por arquivo e manifesto `legacy-import.json`; os originais não são alterados. Falha na cópia deixa o store em erro, nunca no demo.
+- A área `workspace` do adapter fica desligada até o cofre de segredos (TASK-010).
+
+**Alternativas:** structs tipadas em Rust (duplicaria o schema e descartaria campos desconhecidos); `serde_json::to_vec_pretty` puro (bytes diferentes: `1.0`, `1e-7`, ordem de chaves).
+
+**Consequências:** uma fixture compartilhada (`src/shared/contract/workspace-store/`) prova a igualdade de bytes nos dois lados; mudanças no serializador precisam mantê-la verde.
