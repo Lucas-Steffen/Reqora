@@ -1,6 +1,8 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core'
 import { BACKEND_ERROR_CODES, COMMANDS, type BackendErrorCode, type ImportOutcome, type PreferencesSnapshot, type ReqoraApi, type SaveOutcome } from '../../../shared/api'
 import type { RunResult } from '../../../runner/run'
+import { createDemoWorkspace } from '../../../workspace/demo'
+import { isWorkspace, normalizeWorkspace } from '../../../workspace/repository'
 import type { Workspace } from '../../../workspace/types'
 
 /** The subset of `@tauri-apps/api/core` invoke the adapter needs; tests pass a fake. */
@@ -62,7 +64,14 @@ export function createTauriApi(invoke: Invoke = (command, args) => tauriInvoke(c
   const api: Partial<ReqoraApi> = {}
   if (backend.workspace) {
     api.workspace = {
-      load: () => call<Workspace>(COMMANDS.workspaceLoad),
+      // Rust keeps the file as opaque JSON: `null` is a first run, and the
+      // schema (including the v1 -> v2 migration) stays in TypeScript.
+      async load() {
+        const stored = await call<unknown>(COMMANDS.workspaceLoad)
+        if (stored === null) return createDemoWorkspace()
+        if (!isWorkspace(stored)) throw new PlatformError('INVALID', 'The saved workspace is not valid.')
+        return normalizeWorkspace(stored)
+      },
       async save(workspace) {
         try {
           return await call<SaveOutcome>(COMMANDS.workspaceSave, { workspace })

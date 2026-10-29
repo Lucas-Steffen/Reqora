@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "revision": 0,
+  "activeProjectId": "p1",
+  "unknownTopLevel": { "kept": true, "10": "ten", "2": "two", "b": 1, "a": 2 },
+  "projects": [
+    {
+      "id": "p1",
+      "name": "Duplicate key: replaced by the next value, kept at this position",
+      "name": "Tricky é   🚀 \"quoted\" back\\slash \u0001 \t tab / slash <>&",
+      "folders": [{ "id": "f1", "name": "Folder", "parentId": null }],
+      "endpoints": [
+        {
+          "id": "e1",
+          "name": "Numbers",
+          "method": "GET",
+          "path": "/numbers/{id}",
+          "example": [1.0, 1e-7, 1E21, -0, 0.1, 0.000001, 1.5e300, 123456789012345678901234, 9007199254740993, -2.50, 100e-2],
+          "responses": { "404": {}, "200": { "description": "OK" }, "default": [] }
+        }
+      ],
+      "resources": [],
+      "importSources": [],
+      "environments": [
+        { "id": "env1", "name": "Dev", "variables": [{ "id": "v1", "key": "token", "value": "", "secret": true, "enabled": true }] }
+      ],
+      "activeEnvironmentId": "env1",
+      "globals": []
+    },
+    {
+      "id": "p2",
+      "name": "Empty",
+      "folders": [],
+      "endpoints": [],
+      "resources": [],
+      "importSources": [],
+      "environments": [],
+      "activeEnvironmentId": null,
+      "globals": [{}]
+    }
+  ]
+}

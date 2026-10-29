@@ -1,0 +1,85 @@
+{
+  "version": 2,
+  "revision": 1,
+  "activeProjectId": "p1",
+  "unknownTopLevel": {
+    "2": "two",
+    "10": "ten",
+    "kept": true,
+    "b": 1,
+    "a": 2
+  },
+  "projects": [
+    {
+      "id": "p1",
+      "name": "Tricky é   🚀 \"quoted\" back\\slash \u0001 \t tab / slash <>&",
+      "folders": [
+        {
+          "id": "f1",
+          "name": "Folder",
+          "parentId": null
+        }
+      ],
+      "endpoints": [
+        {
+          "id": "e1",
+          "name": "Numbers",
+          "method": "GET",
+          "path": "/numbers/{id}",
+          "example": [
+            1,
+            1e-7,
+            1e+21,
+            0,
+            0.1,
+            0.000001,
+            1.5e+300,
+            1.2345678901234569e+23,
+            9007199254740992,
+            -2.5,
+            1
+          ],
+          "responses": {
+            "200": {
+              "description": "OK"
+            },
+            "404": {},
+            "default": []
+          }
+        }
+      ],
+      "resources": [],
+      "importSources": [],
+      "environments": [
+        {
+          "id": "env1",
+          "name": "Dev",
+          "variables": [
+            {
+              "id": "v1",
+              "key": "token",
+              "value": "",
+              "secret": true,
+              "enabled": true
+            }
+          ]
+        }
+      ],
+      "activeEnvironmentId": "env1",
+      "globals": []
+    },
+    {
+      "id": "p2",
+      "name": "Empty",
+      "folders": [],
+      "endpoints": [],
+      "resources": [],
+      "importSources": [],
+      "environments": [],
+      "activeEnvironmentId": null,
+      "globals": [
+        {}
+      ]
+    }
+  ]
+}

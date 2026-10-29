@@ -3,6 +3,7 @@ import contract from '../../../shared/contract/ipc-commands.json'
 import { BACKEND_ERROR_CODES, COMMANDS, IPC, type ReqoraApi } from '../../../shared/api'
 import type { RunInput } from '../../../runner/run'
 import type { Workspace } from '../../../workspace/types'
+import { createDemoWorkspace } from '../../../workspace/demo'
 import { createTauriApi, PlatformError, toPlatformError, type Invoke, type TauriBackend } from './tauri'
 
 const ALL: TauriBackend = { workspace: true, importer: true, request: true, secrets: true, preferences: true }
@@ -42,7 +43,7 @@ describe('Tauri command contract', () => {
   })
 
   it.each(Object.keys(contract.commands).filter(key => key !== 'importPath'))('sends %s with the fixture argument keys', async key => {
-    const { invoke, calls } = fakeInvoke(() => ({ ok: true, workspace }))
+    const { invoke, calls } = fakeInvoke(command => (command === COMMANDS.workspaceLoad ? null : { ok: true, workspace }))
     await exercise[key as keyof typeof IPC](createTauriApi(invoke, ALL))
     const entry = contract.commands[key as keyof typeof contract.commands]
     expect(calls).toHaveLength(1)
@@ -56,6 +57,28 @@ describe('Tauri command contract', () => {
     await api.secrets!.reveal('variable-1')
     await api.importer!.fromUrl('https://example.com/a.yaml')
     expect(calls.map(call => call.args)).toEqual([{ variableId: 'variable-1' }, { url: 'https://example.com/a.yaml' }])
+  })
+})
+
+describe('Tauri workspace load', () => {
+  it('seeds the demo on first run', async () => {
+    const { invoke } = fakeInvoke(() => null)
+    const loaded = await createTauriApi(invoke, ALL).workspace!.load()
+    expect({ ...loaded, projects: loaded.projects.length }).toMatchObject({ version: 2, revision: 0, projects: createDemoWorkspace().projects.length })
+  })
+
+  it('migrates an older format in the renderer, as the Electron store does', async () => {
+    const demo = createDemoWorkspace()
+    const v1 = JSON.parse(JSON.stringify({ ...demo, version: 1, revision: 7, activeProjectId: 'gone', projects: demo.projects.map(({ environments: _e, globals: _g, activeEnvironmentId: _a, ...rest }) => rest) }))
+    const { invoke } = fakeInvoke(() => v1)
+    const loaded = await createTauriApi(invoke, ALL).workspace!.load()
+    expect(loaded).toMatchObject({ version: 2, revision: 7, activeProjectId: demo.projects[0].id })
+    expect(loaded.projects[0]).toMatchObject({ environments: [], globals: [], activeEnvironmentId: null })
+  })
+
+  it('rejects a reply that is not a workspace', async () => {
+    const { invoke } = fakeInvoke(() => ({ version: 2, revision: 0, projects: [] }))
+    await expect(createTauriApi(invoke, ALL).workspace!.load()).rejects.toMatchObject({ name: 'PlatformError', code: 'INVALID' })
   })
 })
 
