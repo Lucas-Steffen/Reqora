@@ -1,0 +1,17 @@
+{
+  "$comment": "Tauri command contract shared by the TS adapter tests (src/renderer/src/platform/tauri.test.ts) and cargo test (src-tauri/src/ipc.rs). Argument keys are the camelCase names the renderer sends; Tauri maps them to the snake_case Rust parameters listed next to them.",
+  "commands": {
+    "workspaceLoad": { "name": "workspace_load", "args": [] },
+    "workspaceSave": { "name": "workspace_save", "args": [{ "js": "workspace", "rust": "workspace" }] },
+    "importPick": { "name": "import_pick", "args": [] },
+    "importPath": { "name": "import_path", "args": [{ "js": "path", "rust": "path" }] },
+    "importUrl": { "name": "import_url", "args": [{ "js": "url", "rust": "url" }] },
+    "importCancel": { "name": "import_cancel", "args": [] },
+    "requestSend": { "name": "request_send", "args": [{ "js": "input", "rust": "input" }] },
+    "secretReveal": { "name": "secret_reveal", "args": [{ "js": "variableId", "rust": "variable_id" }] },
+    "preferencesLoad": { "name": "preferences_load", "args": [] },
+    "preferencesSave": { "name": "preferences_save", "args": [{ "js": "values", "rust": "values" }] }
+  },
+  "errorCodes": ["STALE", "INVALID", "IO"],
+  "errorSample": { "code": "STALE", "message": "The workspace changed since it was loaded." }
+}

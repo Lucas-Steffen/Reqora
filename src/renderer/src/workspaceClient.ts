@@ -5,7 +5,7 @@ import type { ReqoraApi } from '../../shared/api'
 import { desktopApi } from './platform'
 
 /** Adapts the preload API to the replaceable repository interface. */
-export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepository {
+export function createIpcWorkspaceRepository(api: Pick<ReqoraApi, 'workspace'>): WorkspaceRepository {
   return {
     load: () => api.workspace.load(),
     async save(workspace) {
@@ -38,7 +38,7 @@ export function createFetchedWorkspaceRepository(url: string, fetcher: typeof fe
 
 export function defaultWorkspaceRepository(): WorkspaceRepository {
   const api = desktopApi()
-  if (api) return createIpcWorkspaceRepository(api)
+  if (api?.workspace) return createIpcWorkspaceRepository({ workspace: api.workspace })
   const bench = import.meta.env.VITE_REQORA_BENCH_WORKSPACE
   return bench ? createFetchedWorkspaceRepository(bench) : createMemoryWorkspaceRepository()
 }

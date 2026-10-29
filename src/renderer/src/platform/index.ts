@@ -1,4 +1,5 @@
 import type { ReqoraApi } from '../../../shared/api'
+import { createTauriApi } from './tauri'
 
 export type PlatformKind = 'electron' | 'tauri' | 'browser'
 
@@ -8,17 +9,23 @@ function hostWindow(): HostWindow | undefined {
   return typeof window === 'undefined' ? undefined : (window as HostWindow)
 }
 
-/** Which host the renderer runs in. Electron wins if both markers exist. */
+/** Which host the renderer runs in, checked Tauri → Electron → browser. */
 export function detectPlatform(host: HostWindow | undefined = hostWindow()): PlatformKind {
-  if (host?.reqora) return 'electron'
   if (host && '__TAURI_INTERNALS__' in host) return 'tauri'
+  if (host?.reqora) return 'electron'
   return 'browser'
 }
 
+let tauriApi: Partial<ReqoraApi> | undefined
+
 /**
- * The desktop backend, if any. Only Electron has one so far; the Tauri host
- * runs on the in-memory adapter (`./memory`) until its IPC adapter lands.
+ * The desktop backend, if any. Under Tauri only the areas the Rust backend
+ * implements are present (see `TAURI_BACKEND`); callers fall back per area.
  */
-export function desktopApi(host: HostWindow | undefined = hostWindow()): ReqoraApi | undefined {
-  return detectPlatform(host) === 'electron' ? host!.reqora : undefined
+export function desktopApi(host: HostWindow | undefined = hostWindow()): Partial<ReqoraApi> | undefined {
+  switch (detectPlatform(host)) {
+    case 'tauri': return tauriApi ??= createTauriApi()
+    case 'electron': return host!.reqora
+    default: return undefined
+  }
 }

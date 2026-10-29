@@ -38,5 +38,5 @@ export function createBrowserRequestGateway(getWorkspace: () => Workspace | null
 
 export function defaultRequestGateway(getWorkspace: () => Workspace | null): RequestGateway {
   const api = desktopApi()
-  return api ? { ...api.request, reveal: api.secrets.reveal } : createBrowserRequestGateway(getWorkspace)
+  return api?.request ? { ...api.request, reveal: api.secrets?.reveal } : createBrowserRequestGateway(getWorkspace)
 }

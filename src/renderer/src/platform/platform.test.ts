@@ -11,10 +11,15 @@ describe('platform detection', () => {
     expect(desktopApi({ reqora: api })).toBe(api)
   })
 
-  it('recognises Tauri without exposing a backend yet', () => {
+  it('uses the Tauri adapter, with no areas until the Rust backend has them', () => {
     const host = { reqora: undefined, __TAURI_INTERNALS__: {} }
     expect(detectPlatform(host)).toBe('tauri')
-    expect(desktopApi(host)).toBeUndefined()
+    expect(desktopApi(host)).toEqual({})
+    expect(desktopApi(host)).toBe(desktopApi(host))
+  })
+
+  it('prefers Tauri when both markers exist', () => {
+    expect(detectPlatform({ reqora: api, __TAURI_INTERNALS__: {} })).toBe('tauri')
   })
 
   it('falls back to the browser', () => {

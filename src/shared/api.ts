@@ -64,6 +64,27 @@ export const IPC = {
   preferencesSave: 'reqora:preferences:save'
 } as const
 
+/**
+ * Tauri command names, one per IPC channel above. Rust registers the same
+ * names; `contract/ipc-commands.json` pins both sides (see TASK-008).
+ */
+export const COMMANDS = {
+  workspaceLoad: 'workspace_load',
+  workspaceSave: 'workspace_save',
+  importPick: 'import_pick',
+  importPath: 'import_path',
+  importUrl: 'import_url',
+  importCancel: 'import_cancel',
+  requestSend: 'request_send',
+  secretReveal: 'secret_reveal',
+  preferencesLoad: 'preferences_load',
+  preferencesSave: 'preferences_save'
+} as const satisfies Record<keyof typeof IPC, string>
+
+/** Error codes a Tauri command may reject with, as `{ code, message }`. */
+export const BACKEND_ERROR_CODES = ['STALE', 'INVALID', 'IO'] as const
+export type BackendErrorCode = (typeof BACKEND_ERROR_CODES)[number]
+
 declare global {
   interface Window {
     reqora?: ReqoraApi
