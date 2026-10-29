@@ -22,6 +22,10 @@ aes-gcm = "0.10.3"
 rand = "0.9.5"
 base64 = "0.23.1"
 
+# DPAPI, only to open the secrets of the Electron profile (migrate::secrets).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Cryptography"] }
+
 [dev-dependencies]
 tempfile = "3"
 

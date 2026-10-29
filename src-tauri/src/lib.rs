@@ -11,22 +11,32 @@ use tauri::Manager;
 
 /// Starts the Tauri host. The window, CSP and capabilities live in
 /// `tauri.conf.json` and `capabilities/`. On start the Electron profile is
-/// copied once into the app data directory (see `migrate::legacy`).
+/// copied once into the app data directory (see `migrate::legacy`) and its
+/// secrets move into the vault (`migrate::secrets`).
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let paths = app.path();
             let data_dir = paths.app_data_dir()?;
-            let store = match paths.config_dir() {
-                Ok(config) => match migrate::legacy::import_legacy(&config.join("reqora"), &data_dir) {
-                    Ok(_) => WorkspaceStore::new(&data_dir),
-                    // Never fall back to the demo over data that is still in the old profile.
-                    Err(error) => WorkspaceStore::failed(&data_dir, format!("The Electron workspace could not be imported: {error}")),
-                },
-                Err(_) => WorkspaceStore::new(&data_dir),
-            };
             // The master key lives in the OS keychain; values in `secrets.v2.json`.
             let vault = Arc::new(SecretVault::new(&data_dir, Box::new(KeyringKeyProvider)));
+            let store = match paths.config_dir() {
+                Ok(config) => {
+                    let legacy = config.join("reqora");
+                    match migrate::legacy::import_legacy(&legacy, &data_dir) {
+                        Ok(_) => {
+                            // Secrets that do not open stay out of the vault and are asked for again.
+                            if let Err(error) = migrate::secrets::migrate_secrets(&legacy, &data_dir, &vault) {
+                                eprintln!("Electron secrets were not migrated: {error}");
+                            }
+                            WorkspaceStore::new(&data_dir)
+                        }
+                        // Never fall back to the demo over data that is still in the old profile.
+                        Err(error) => WorkspaceStore::failed(&data_dir, format!("The Electron workspace could not be imported: {error}")),
+                    }
+                }
+                Err(_) => WorkspaceStore::new(&data_dir),
+            };
             app.manage(store.with_secrets(vault));
             Ok(())
         })
