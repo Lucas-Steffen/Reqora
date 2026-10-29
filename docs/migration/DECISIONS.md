@@ -6,7 +6,7 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 
 ## ADR-001 — Stack candidata: Tauri 2, condicionada a um gate de memória
 
-**Estado:** Aceito como candidata; a decisão final sai na TASK-007.
+**Estado:** Aceito. O gate da TASK-007 deu Go (ver ADR-005).
 
 **Contexto.** O Reqora roda em Electron 44.8 e o motivo da migração é o consumo de RAM. Todo o domínio (busca, importer, ambientes, runner, workspace) já é TypeScript puro e testado; só `src/main`, o preload e 3 gateways dependem de Electron (ver [audit.md](audit.md)). Os números públicos de Electron × Tauri no Windows são contraditórios e não servem de prova (ver [research.md](research.md)).
 
@@ -72,3 +72,34 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas.** Uma entrada no keyring por segredo (esbarra no limite de tamanho e polui o cofre do SO); Stronghold (não recomendado).
 
 **Consequências.** Se o keyring estiver indisponível, a mensagem de erro deve ser idêntica à atual.
+
+---
+
+## ADR-005 — Gate de memória: Go para o Tauri 2
+
+**Estado:** Aceito.
+
+**Contexto.** O ADR-001 condicionou o Tauri a um gate: a memória privada da árvore de processos precisa ficar abaixo da do Electron, sem sobreposição dos intervalos mín–máx de 5 execuções, na inicialização e no ocioso. O protótipo da TASK-006 foi medido com o mesmo amostrador, na mesma máquina e com a mesma fixture `workspace-10x100.json` do baseline da TASK-003. Os detalhes estão em [BENCHMARKS.md](BENCHMARKS.md).
+
+**Números** (MiB, mediana (mín–máx) de 5 execuções, Windows 11, WebView2 156.0.4314.50):
+
+| Momento | Privada Electron | Privada Tauri | Diferença das medianas |
+|---|---|---|---|
+| T+5 s | 232 (232–235) | 202 (201–205) | −30 |
+| Ocioso 5–65 s, mediana | 221 (218–224) | 195 (187–197) | −26 |
+| Ocioso 5–65 s, pico | 233 (232–235) | 203 (202–208) | −30 |
+| Fim do ocioso (60–65 s) | 217 (216–220) | 191 (183–193) | −26 |
+
+**Decisão.** **Go.** Em todos os momentos, o máximo do Tauri fica abaixo do mínimo do Electron. Os ajustes do WebView2 (`MemoryUsageTargetLevel=Low`, `TrySuspendAsync` e processo de GPU) não foram necessários para passar no gate. Eles ficam como otimização futura, a medir na Fase D.
+
+**Ressalvas** (registradas, não escondidas):
+
+- **A vantagem é modesta:** cerca de 12% da memória privada. Isso confirma o que a pesquisa previa para o Windows, onde o WebView2 também é Chromium. O ganho maior tem de vir da arquitetura (Fases C e D), não da troca de shell.
+- **A residente privada (wsPriv) empata:** 105 (104–107) contra 105 (105–108) em T+5 s, e 96 (95–98) contra 93 (93–96) no fim do ocioso. A métrica do gate é a privada (commit), como definido no ADR-001.
+- **A residente (ws) é maior no Tauri:** 366 contra 352 MiB em T+5 s. O Tauri abre 7 a 8 processos, contra 4 do Electron, e o ws soma páginas compartilhadas mais de uma vez.
+- **O processo do app em si é pequeno:** o `reqora.exe` fica em cerca de 5 MiB privados. O resto é do WebView2.
+- **Só inicialização e ocioso foram medidos.** Os cenários de carga só ficam comparáveis na TASK-017, com o backend Rust. Hoje o Tauri ainda não envia requisições nem importa.
+
+**Alternativas.** Com o Go, Qt 6 e Avalonia 12 não são prototipados (ADR-001).
+
+**Consequências.** A Fase C começa pela TASK-008. A Fase E (remoção do Electron) continua condicionada à paridade funcional. Se a TASK-017 mostrar que o Tauri perde nos cenários de carga, este ADR é revisto com os números.

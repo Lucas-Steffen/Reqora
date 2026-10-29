@@ -144,8 +144,48 @@ Detalhes que afetam a leitura:
   - Isso indica retenção de respostas grandes ao longo das trocas. A causa não foi investigada aqui; esse é o escopo das TASK-018 e TASK-024.
 - **Import de 1.000 endpoints.** A memória privada termina 163 MiB acima do valor anterior ao import, e não volta nos 5 s seguintes.
 
+### Protótipo Tauri (TASK-007)
+
+- **Execução:** `pnpm bench:tauri -- --build` e depois `pnpm bench:tauri`, em 2026-10-28. As 5 execuções foram válidas, mais um lançamento de aquecimento descartado.
+- **Dados brutos:** [`bench-results/tauri/default/`](bench-results/tauri/default/), com um CSV por execução e o `summary.json`.
+- **Ambiente:** a mesma máquina do baseline, com WebView2 156.0.4314.50 e Tauri 2.12.5.
+- **Build de bench:**
+  - O renderer é compilado com `VITE_REQORA_BENCH_WORKSPACE=/bench-workspace.json`.
+  - O adapter `memory` busca a fixture `workspace-10x100.json`, copiada ao lado do `index.html`.
+  - O executável vai para `src-tauri/target/bench` (3.262.976 bytes), separado do release normal.
+- **Diferença de método em relação ao Electron:** o Electron lê a fixture no processo principal e a entrega por IPC. O Tauri a busca por `fetch` na própria origem, porque ainda não tem backend. Nos dois casos abrem os mesmos 10 projetos com 100 endpoints cada.
+- **Verificação:**
+  - `pnpm bench:tauri -- --verify` lança o executável uma vez, sem medir, com `--remote-debugging-port` e Playwright por CDP. Ele confirma os 10 projetos no seletor "Active project".
+  - As execuções medidas rodam sem depurador, cada uma com um perfil WebView2 novo (`WEBVIEW2_USER_DATA_FOLDER`).
+- **Primeiro tick do amostrador:** entre 535 e 744 ms depois do spawn.
+
+| Momento | Processos | Residente (ws) | Privada (commit) | Residente privada (wsPriv) |
+|---|---|---|---|---|
+| T+5 s | 7 (7–7) | 366 (365–368) | 202 (201–205) | 105 (104–107) |
+| Ocioso 5–65 s, mediana | 7 (7–7) | 369 (367–380) | 195 (187–197) | 99 (98–101) |
+| Ocioso 5–65 s, pico | 8 (7–8) | 376 (375–388) | 203 (202–208) | 106 (105–110) |
+| Fim do ocioso (60–65 s), mediana | 7 (7–7) | 364 (363–374) | 191 (183–193) | 96 (95–98) |
+| Fim do ocioso (60–65 s), pico | 8 (7–8) | 372 (368–381) | 193 (186–200) | 98 (98–100) |
+
+### Comparação Electron × Tauri: inicialização e ocioso
+
+Memória privada (commit) da árvore, em MiB, como mediana (mín–máx). O gate do ADR-001 exige que o máximo do Tauri fique abaixo do mínimo do Electron.
+
+| Momento | Electron | Tauri | Sobreposição |
+|---|---|---|---|
+| T+5 s | 232 (232–235) | 202 (201–205) | Não |
+| Ocioso, mediana | 221 (218–224) | 195 (187–197) | Não |
+| Ocioso, pico | 233 (232–235) | 203 (202–208) | Não |
+| Fim do ocioso | 217 (216–220) | 191 (183–193) | Não |
+
+- **Resultado do gate: Go** (ADR-005), com 26 a 30 MiB a menos.
+- A residente privada empata: 105 contra 105 MiB em T+5 s.
+- A residente é maior no Tauri, 366 contra 352 MiB, porque são 7 a 8 processos contra 4.
+- Os ajustes do WebView2 não foram testados, porque o gate passou sem eles.
+
 ### Lacunas
 
 - **Inicialização sem automação.** Não há medida de tempo até a UI ficar pronta nesse modo, e o `readyMs` com automação inclui o custo de anexar o Playwright.
 - **Sistemas operacionais.** Só o Windows foi medido. Linux e macOS não estão disponíveis nesta máquina.
-- **Protótipo Tauri:** TASK-007. **Comparação completa:** TASK-017.
+- **Protótipo Tauri:** só inicialização e ocioso (TASK-007). Os cenários de carga dependem do backend Rust e ficam para a TASK-017.
+- **Ajustes do WebView2** (`MemoryUsageTargetLevel=Low`, `TrySuspendAsync`): não medidos.

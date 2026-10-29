@@ -112,3 +112,21 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - Observação: a primeira execução do release fechou sozinha; as 4 seguintes não. Causa não confirmada, registrada para a TASK-016.
 
 **Próximo:** TASK-007, gate de memória contra o baseline Electron.
+
+## 2026-10-28 — TASK-007: gate de memória (DONE, Go)
+
+**Feito**
+- `pnpm bench:tauri` mede o protótipo do mesmo jeito que o baseline Electron, com a mesma fixture `workspace-10x100.json`. No build de bench a fixture é buscada por `fetch`, porque ainda não há backend.
+- ADR-005 registra o **Go** para o Tauri 2, e o ADR-001 passa a aceito.
+
+**Evidências**
+- Memória privada da árvore, em MiB, mediana (mín–máx) de 5 execuções:
+  - T+5 s: 202 (201–205) no Tauri contra 232 (232–235) no Electron.
+  - Fim do ocioso: 191 (183–193) contra 217 (216–220).
+  - Sem sobreposição em nenhum momento.
+- Ressalvas:
+  - A residente privada empata.
+  - A residente é maior no Tauri (7 a 8 processos contra 4).
+  - O ganho é de cerca de 12% e vale só para inicialização e ocioso.
+
+**Próximo:** Fase C, começando pela TASK-008 (camada IPC tipada).
