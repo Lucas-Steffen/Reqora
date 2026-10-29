@@ -14,7 +14,7 @@ Estados: `TODO`, `IN_PROGRESS`, `BLOCKED`, `REVIEW`, `DONE`. Uma TASK só fica `
 | [TASK-008](tasks/TASK-008.md) | C | Camada IPC tipada (platform/) | Alta | TASK-007 | DONE |
 | [TASK-009](tasks/TASK-009.md) | C | Store de workspace em Rust | Alta | TASK-008 | DONE |
 | [TASK-010](tasks/TASK-010.md) | C | Cofre de segredos | Alta | TASK-009 | DONE |
-| [TASK-011](tasks/TASK-011.md) | C | Migração de segredos do Electron (DPAPI) | Alta | TASK-010 | TODO |
+| [TASK-011](tasks/TASK-011.md) | C | Migração de segredos do Electron (DPAPI) | Alta | TASK-010 | DONE |
 | [TASK-012](tasks/TASK-012.md) | C | Envio HTTP com reqwest | Alta | TASK-010 | TODO |
 | [TASK-013](tasks/TASK-013.md) | C | Import em Rust + Web Worker | Alta | TASK-008 | TODO |
 | [TASK-014](tasks/TASK-014.md) | C | Segurança da janela | Alta | TASK-008 | TODO |

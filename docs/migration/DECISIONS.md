@@ -151,3 +151,20 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas:** uma entrada no keyring por segredo (limite de cerca de 2,5 KB por credencial no Windows e muitas entradas); Stronghold (não é mais recomendado pelo Tauri).
 
 **Consequências:** perder a entrada do keyring torna `secrets.v2.json` ilegível; os valores ficam sem `hasStoredSecret` e precisam ser redefinidos. Testes usam um provedor de chave em memória.
+
+## ADR-009 — Migração dos segredos do Electron
+
+**Estado:** Aceita (TASK-011)
+
+**Contexto:** o Electron guarda cada segredo com `safeStorage`, que no Windows usa AES-256-GCM sob uma chave protegida por DPAPI em `Local State`. O Tauri não tem `safeStorage`, e o spec exige que nenhum dado seja perdido nem gravado em texto puro.
+
+**Decisão**
+- Ler `Local State` direto do perfil legado (ele não é copiado) e abrir a chave com `CryptUnprotectData` via `windows-sys`, só em `cfg(windows)`.
+- Abrir cada blob `v10` e gravá-lo no cofre novo; o valor já presente no cofre vence.
+- Segredo que não abre fica fora do cofre (`hasStoredSecret: false`) e é pedido de novo; `secrets.json` é preservado intacto.
+- Relatório `secrets-migration.json` marca a execução única. Keyring indisponível não grava o relatório, para tentar de novo.
+- O vetor de teste vem do Electron real; a chave do perfil descartável é versionada para o teste rodar em qualquer máquina.
+
+**Alternativas:** manter `secrets.json` como formato do Tauri (acoplaria o cofre ao DPAPI e à chave do Chromium); pedir todos os segredos de novo (perda de dados evitável).
+
+**Consequências:** macOS e Linux ainda não migram (backlog). Rodar o Electron de novo depois da migração gera divergência, como já registrado para o workspace.

@@ -168,3 +168,16 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - `pnpm typecheck`, `pnpm test` (179), `pnpm build` e `pnpm smoke:electron` verdes.
 
 **Próximo:** TASK-011, migração dos segredos do Electron (DPAPI).
+
+## 2026-10-28 — TASK-011: Migração de segredos do Electron (DONE)
+
+**Feito**
+- DPAPI desembrulha a chave de `Local State` e AES-GCM abre os blobs `v10`; cada segredo vai para o cofre da TASK-010 (ADR-009).
+- Falhas ficam fora do cofre com `hasStoredSecret: false`; `secrets.json` nunca é alterado; relatório `secrets-migration.json` só com ids.
+- Vetor de teste gerado pelo Electron 44.8.0 real.
+
+**Evidências**
+- `cargo test` (43 + 1 ignorado, que passa com o perfil real) e `cargo clippy --all-targets -- -D warnings` verdes.
+- `pnpm typecheck`, `pnpm test` e `pnpm build` verdes.
+
+**Próximo:** TASK-012, envio HTTP com reqwest.
