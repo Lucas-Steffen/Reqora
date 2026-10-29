@@ -11,10 +11,10 @@ describe('platform detection', () => {
     expect(desktopApi({ reqora: api })).toBe(api)
   })
 
-  it('uses the Tauri adapter, with no areas until the Rust backend has them', () => {
+  it('uses the Tauri adapter with the areas the Rust backend has', () => {
     const host = { reqora: undefined, __TAURI_INTERNALS__: {} }
     expect(detectPlatform(host)).toBe('tauri')
-    expect(desktopApi(host)).toEqual({})
+    expect(Object.keys(desktopApi(host)!).sort()).toEqual(['secrets', 'workspace'])
     expect(desktopApi(host)).toBe(desktopApi(host))
   })
 

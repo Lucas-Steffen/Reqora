@@ -1,8 +1,11 @@
 pub mod commands;
 pub mod ipc;
 pub mod migrate;
+pub mod secrets;
 pub mod store;
 
+use secrets::{KeyringKeyProvider, SecretVault};
+use std::sync::Arc;
 use store::workspace::WorkspaceStore;
 use tauri::Manager;
 
@@ -22,10 +25,14 @@ pub fn run() {
                 },
                 Err(_) => WorkspaceStore::new(&data_dir),
             };
-            app.manage(store);
+            // The master key lives in the OS keychain; values in `secrets.v2.json`.
+            let vault = Arc::new(SecretVault::new(&data_dir, Box::new(KeyringKeyProvider)));
+            app.manage(store.with_secrets(vault));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::workspace::workspace_load, commands::workspace::workspace_save])
+        .invoke_handler(tauri::generate_handler![
+            commands::workspace::workspace_load, commands::workspace::workspace_save, commands::workspace::secret_reveal
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Reqora");
 }

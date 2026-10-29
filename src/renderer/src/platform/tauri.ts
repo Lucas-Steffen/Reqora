@@ -22,10 +22,10 @@ export interface TauriBackend {
 }
 
 export const TAURI_BACKEND: TauriBackend = {
-  workspace: false,
+  workspace: true,
   importer: false,
   request: false,
-  secrets: false,
+  secrets: true,
   preferences: false
 }
 

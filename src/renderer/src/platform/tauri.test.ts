@@ -120,7 +120,7 @@ describe('Tauri adapter errors', () => {
 describe('Tauri backend areas', () => {
   it('exposes only the areas the backend implements', () => {
     const { invoke } = fakeInvoke()
-    expect(createTauriApi(invoke)).toEqual({})
+    expect(Object.keys(createTauriApi(invoke)).sort()).toEqual(['secrets', 'workspace'])
     const some = createTauriApi(invoke, { ...ALL, importer: false, request: false })
     expect(Object.keys(some).sort()).toEqual(['preferences', 'secrets', 'workspace'])
     expect(Object.keys(createTauriApi(invoke, ALL)).sort()).toEqual(['importer', 'preferences', 'request', 'secrets', 'workspace'])
