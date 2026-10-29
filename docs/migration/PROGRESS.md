@@ -98,3 +98,17 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - `link.exe` presente em `VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64`.
 - `cargo build` de um hello-world compilou, linkou e o executável imprimiu "Hello, world!".
 - A TASK-005 fica DONE; a TASK-006 segue com o scaffold.
+
+## 2026-10-28 — TASK-006: scaffold de src-tauri (DONE)
+
+**Feito**
+- O scaffold `src-tauri/` (commit 60b9351) compila, passa no clippy e gera o instalador NSIS. CSP restrita e capability só `core:default` na janela `main`.
+- O renderer do Tauri sai em `out/tauri-renderer` para não apagar `out/renderer` do electron-vite.
+
+**Evidências**
+- `reqora.exe` release com 3,1 MiB; instalador NSIS com 1,18 MiB.
+- `tauri dev` e o executável release abrem a UI completa no adapter `memory`.
+- `pnpm typecheck`, `pnpm test` (155), `pnpm build` e `pnpm smoke:electron` (5 cenários) verdes.
+- Observação: a primeira execução do release fechou sozinha; as 4 seguintes não. Causa não confirmada, registrada para a TASK-016.
+
+**Próximo:** TASK-007, gate de memória contra o baseline Electron.
