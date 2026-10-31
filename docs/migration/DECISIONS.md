@@ -168,3 +168,35 @@ Cada ADR registra contexto, decisão, alternativas e consequências. Um ADR acei
 **Alternativas:** manter `secrets.json` como formato do Tauri (acoplaria o cofre ao DPAPI e à chave do Chromium); pedir todos os segredos de novo (perda de dados evitável).
 
 **Consequências:** macOS e Linux ainda não migram (backlog). Rodar o Electron de novo depois da migração gera divergência, como já registrado para o workspace.
+
+## ADR-010 — Segredos no envio por placeholder
+
+**Estado:** Aceita (TASK-012)
+
+**Contexto:** no Electron o runner roda no processo principal e lê os segredos em texto puro. No Tauri o runner TS roda no WebView, que não deve receber segredo em texto puro, exceto pelo `reveal` explícito do usuário.
+
+**Decisão**
+- `readSecret` devolve placeholders `rqs_<nonce de 128 bits em hex>_<i>`, com nonce novo a cada envio. Eles só têm letras, números e `_`, então `encodeURIComponent` e `URLSearchParams` não os alteram e eles não casam com `{{…}}`.
+- O WebView chama `request_send { projectId, prepared, secretRefs }` enviando só as referências que aparecem na requisição preparada.
+- O Rust valida cada referência contra o workspace gravado: variável `secret: true`, habilitada, no ambiente ativo ou nas globais do projeto informado. Caso contrário, `INVALID`.
+- A substituição respeita a posição: valor cru em headers e corpo, percent-encoded na URL, form-encoded no corpo urlencoded. O corpo é montado depois, para o `Content-Length` sair certo.
+- Resposta e erros são mascarados com "••••••", do valor mais longo para o mais curto, incluindo as formas codificadas.
+- Valor que não abre segue como `{{chave}}` e entra em `unresolved`.
+
+**Diferenças aceitas:** `{{var}}` dentro do valor de um segredo fica literal; `{{segredo.caminho}}` é sempre não resolvido; segredo usado na URL é percent-encoded.
+
+**Alternativas:** portar a resolução de variáveis e o runner para Rust com fixtures douradas compartilhadas (paridade total, mas uma segunda implementação a manter); mandar os segredos ao WebView (contraria o objetivo).
+
+**Consequências:** um WebView comprometido ainda pode mandar qualquer segredo para qualquer host, como hoje. A defesa é CSP, capabilities mínimas e navegação bloqueada (TASK-014).
+
+## ADR-011 — TLS com native-tls
+
+**Estado:** Aceita (TASK-012)
+
+**Contexto:** o padrão do reqwest 0.13 é rustls com aws-lc. Clientes de API costumam falar com hosts internos cujos certificados de CA corporativa estão no repositório do sistema, que o fetch do Electron já respeita.
+
+**Decisão:** usar `native-tls` (SChannel no Windows), que usa o repositório de certificados do sistema sem configuração extra e não traz aws-lc (que exige toolchain de C/NASM no build).
+
+**Alternativas:** rustls com `rustls-platform-verifier` (mais uma dependência e comportamento diferente em revogação); rustls com webpki-roots (ignoraria CAs corporativas).
+
+**Consequências:** o comportamento de TLS depende do SO; Linux (OpenSSL) e macOS (Security.framework) não foram validados nesta máquina.

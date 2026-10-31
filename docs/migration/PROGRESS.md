@@ -181,3 +181,17 @@ Diário da migração, do mais antigo para o mais recente. Cada entrada registra
 - `pnpm typecheck`, `pnpm test` e `pnpm build` verdes.
 
 **Próximo:** TASK-012, envio HTTP com reqwest.
+
+## 2026-10-31 — TASK-012: Envio HTTP com reqwest (DONE)
+
+**Feito**
+- `request_send` em Rust com reqwest 0.13: 30 s, corte exato em 10 MiB com `truncated`, 20 redirecionamentos, descompressão e classificação de erros pela cadeia de causas, com os mesmos códigos e textos do Electron.
+- Segredos por placeholder (ADR-010): o WebView nunca recebe o valor; o Rust valida as referências contra o workspace gravado do projeto, substitui, envia e mascara.
+- TLS com native-tls, usando o repositório de certificados do Windows (ADR-011).
+- Novo `request_cancel`, com paridade no Electron (`request.cancel`).
+
+**Evidências**
+- `cargo test` (67 + 1 ignorado) e `cargo clippy --all-targets -- -D warnings` verdes, com testes de loopback.
+- `pnpm typecheck`, `pnpm test` (190), `pnpm build` e `pnpm smoke:electron` verdes.
+
+**Próximo:** TASK-013, import em Rust com Web Worker (ou TASK-014, segurança da janela).
