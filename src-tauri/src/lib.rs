@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod http;
 pub mod ipc;
 pub mod migrate;
 pub mod secrets;
@@ -38,10 +39,13 @@ pub fn run() {
                 Err(_) => WorkspaceStore::new(&data_dir),
             };
             app.manage(store.with_secrets(vault));
+            app.manage(http::Http::new()?);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::workspace::workspace_load, commands::workspace::workspace_save, commands::workspace::secret_reveal
+            commands::workspace::workspace_load, commands::workspace::workspace_save, commands::workspace::secret_reveal,
+            commands::http::request_send,
+            commands::http::request_cancel
         ])
         .run(tauri::generate_context!())
         .expect("error while running Reqora");

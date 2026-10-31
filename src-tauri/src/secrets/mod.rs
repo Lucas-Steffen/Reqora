@@ -310,6 +310,23 @@ pub fn is_secret_variable(workspace: &mut Value, id: &str) -> bool {
     variables_mut(workspace).any(|variable| is_secret(variable) && variable.get("id").and_then(Value::as_str) == Some(id))
 }
 
+/// The key of `id` when the runner of `project_id` would resolve it as a
+/// secret: enabled, with a key, in the active environment or the globals.
+pub fn sendable_secret(workspace: &Value, project_id: &str, id: &str) -> Option<String> {
+    let project = workspace.get("projects")?.as_array()?.iter().find(|project| project.get("id").and_then(Value::as_str) == Some(project_id))?;
+    let active = project.get("activeEnvironmentId").and_then(Value::as_str);
+    let environment = project
+        .get("environments")
+        .and_then(Value::as_array)
+        .and_then(|environments| environments.iter().find(|environment| active.is_some() && environment.get("id").and_then(Value::as_str) == active));
+    let lists = [environment.and_then(|environment| environment.get("variables")), project.get("globals")];
+    lists.into_iter().flatten().filter_map(Value::as_array).flatten().filter_map(Value::as_object).find_map(|variable| {
+        let enabled = variable.get("enabled").and_then(Value::as_bool) == Some(true);
+        let key = variable.get("key").and_then(Value::as_str).map(str::trim).filter(|key| !key.is_empty())?;
+        (is_secret(variable) && enabled && id_of(variable).as_deref() == Some(id)).then(|| key.to_owned())
+    })
+}
+
 /// Runs after load (`annotateSecrets`): blanks any secret value and flags
 /// which secrets exist.
 pub fn annotate_secrets(workspace: &mut Value, stored: &HashSet<String>) {

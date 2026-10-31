@@ -21,6 +21,11 @@ keyring = "4"
 aes-gcm = "0.10.3"
 rand = "0.9.5"
 base64 = "0.23.1"
+# HTTP sending (http::send). TLS through SChannel and the Windows certificate store (ADR-011).
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "charset", "http2", "stream", "gzip", "brotli", "deflate", "multipart"] }
+native-tls = "0.2"
+tokio = { version = "1", features = ["rt", "macros", "time", "sync"] }
+futures-util = { version = "0.3", default-features = false }
 
 # DPAPI, only to open the secrets of the Electron profile (migrate::secrets).
 [target.'cfg(windows)'.dependencies]
@@ -28,6 +33,8 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Securit
 
 [dev-dependencies]
 tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util"] }
+flate2 = "1"
 
 [profile.release]
 codegen-units = 1

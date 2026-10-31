@@ -1,6 +1,7 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core'
 import { BACKEND_ERROR_CODES, COMMANDS, type BackendErrorCode, type ImportOutcome, type PreferencesSnapshot, type ReqoraApi, type SaveOutcome } from '../../../shared/api'
-import type { RunResult } from '../../../runner/run'
+import { runRequest, type HttpResponseView, type RunInput, type RunResult } from '../../../runner/run'
+import type { PreparedRequest } from '../../../runner/prepare'
 import { createDemoWorkspace } from '../../../workspace/demo'
 import { isWorkspace, normalizeWorkspace } from '../../../workspace/repository'
 import type { Workspace } from '../../../workspace/types'
@@ -24,7 +25,7 @@ export interface TauriBackend {
 export const TAURI_BACKEND: TauriBackend = {
   workspace: true,
   importer: false,
-  request: false,
+  request: true,
   secrets: true,
   preferences: false
 }
@@ -52,8 +53,56 @@ function isBackendErrorCode(code: string): code is BackendErrorCode {
   return (BACKEND_ERROR_CODES as readonly string[]).includes(code)
 }
 
-/** The `ReqoraApi` contract over Tauri commands; areas the backend lacks are left out. */
-export function createTauriApi(invoke: Invoke = (command, args) => tauriInvoke(command, args), backend: TauriBackend = TAURI_BACKEND): Partial<ReqoraApi> {
+/** What `request_send` resolves with: the masked response and the secrets that did not open. */
+interface SendOutcome {
+  response: Omit<HttpResponseView, 'timeMs'>
+  unresolved: string[]
+}
+
+/** 128 random bits in hex: placeholders of one send cannot be guessed or collide with text. */
+function placeholderNonce(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Runs the request in the WebView with placeholders where secrets go
+ * (ADR-010). Rust checks each placeholder against the stored workspace of the
+ * project, puts the real value in, sends, and masks the value out of the
+ * response; the WebView never holds a secret value.
+ */
+async function sendWithPlaceholders(call: <T>(command: string, args?: Record<string, unknown>) => Promise<T>, workspace: Workspace, input: RunInput): Promise<RunResult> {
+  const nonce = placeholderNonce()
+  const secretRefs: Record<string, string> = {}
+  const projectId = input.projectId ?? workspace.activeProjectId
+  let backendUnresolved: string[] = []
+  const result = await runRequest(input, {
+    workspace,
+    async readSecret(variable) {
+      if (!variable.hasStoredSecret) return undefined
+      const placeholder = `rqs_${nonce}_${Object.keys(secretRefs).length}`
+      secretRefs[placeholder] = variable.id
+      return placeholder
+    },
+    async send(prepared: PreparedRequest) {
+      const started = performance.now()
+      const { method, url, headers, body } = prepared
+      // Only the secrets the request uses: one that is never sent is not reported unresolved, as in Electron.
+      const used = new Set(JSON.stringify([url, headers, body]).match(new RegExp(`rqs_${nonce}_\\d+`, 'g')))
+      const usedRefs = Object.fromEntries(Object.entries(secretRefs).filter(([placeholder]) => used.has(placeholder)))
+      const outcome = await call<SendOutcome>(COMMANDS.requestSend, { input: { projectId, prepared: { method, url, headers, body }, secretRefs: usedRefs } })
+      backendUnresolved = outcome.unresolved
+      return { ...outcome.response, timeMs: Math.round(performance.now() - started) }
+    }
+  })
+  const unresolved = [...result.unresolved, ...backendUnresolved.filter(key => !result.unresolved.includes(key))]
+  return { ...result, unresolved }
+}
+
+/**
+ * The `ReqoraApi` contract over Tauri commands; areas the backend lacks are left out.
+ * Sending needs the renderer's workspace, so the request area exists only with `getWorkspace`.
+ */
+export function createTauriApi(invoke: Invoke = (command, args) => tauriInvoke(command, args), backend: TauriBackend = TAURI_BACKEND, getWorkspace?: () => Workspace | null): Partial<ReqoraApi> {
   const call = async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
     try {
       return await invoke<T>(command, args)
@@ -93,8 +142,15 @@ export function createTauriApi(invoke: Invoke = (command, args) => tauriInvoke(c
       cancel: () => call<void>(COMMANDS.importCancel)
     }
   }
-  if (backend.request) {
-    api.request = { send: input => call<RunResult>(COMMANDS.requestSend, { input }) }
+  if (backend.request && getWorkspace) {
+    api.request = {
+      async send(input) {
+        const workspace = getWorkspace()
+        if (!workspace) return { ok: false, error: 'The workspace is still loading.', unresolved: [] }
+        return sendWithPlaceholders(call, workspace, input)
+      },
+      cancel: () => call<void>(COMMANDS.requestCancel)
+    }
   }
   if (backend.secrets) {
     api.secrets = { reveal: variableId => call<string | null>(COMMANDS.secretReveal, { variableId }) }

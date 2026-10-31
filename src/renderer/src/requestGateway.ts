@@ -1,7 +1,8 @@
 import { runRequest } from '../../runner/run'
 import type { ReqoraApi } from '../../shared/api'
 import type { Workspace } from '../../workspace/types'
-import { desktopApi } from './platform'
+import { desktopApi, detectPlatform } from './platform'
+import { createTauriApi } from './platform/tauri'
 
 export type RequestGateway = ReqoraApi['request'] & Partial<ReqoraApi['secrets']>
 
@@ -37,6 +38,7 @@ export function createBrowserRequestGateway(getWorkspace: () => Workspace | null
 }
 
 export function defaultRequestGateway(getWorkspace: () => Workspace | null): RequestGateway {
-  const api = desktopApi()
+  // Under Tauri the request runs here with secret placeholders, so it needs the workspace.
+  const api = detectPlatform() === 'tauri' ? { ...desktopApi(), ...createTauriApi(undefined, undefined, getWorkspace) } : desktopApi()
   return api?.request ? { ...api.request, reveal: api.secrets?.reveal } : createBrowserRequestGateway(getWorkspace)
 }

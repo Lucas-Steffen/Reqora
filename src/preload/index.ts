@@ -22,7 +22,8 @@ const api: ReqoraApi = {
     cancel: () => ipcRenderer.invoke(IPC.importCancel)
   },
   request: {
-    send: input => ipcRenderer.invoke(IPC.requestSend, input)
+    send: input => ipcRenderer.invoke(IPC.requestSend, input),
+    cancel: () => ipcRenderer.invoke(IPC.requestCancel)
   },
   secrets: {
     reveal: variableId => ipcRenderer.invoke(IPC.secretReveal, variableId)

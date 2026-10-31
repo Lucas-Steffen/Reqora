@@ -36,6 +36,7 @@ pub const COMMANDS: &[(&str, &[&str])] = &[
     ("import_url", &["url"]),
     ("import_cancel", &[]),
     ("request_send", &["input"]),
+    ("request_cancel", &[]),
     ("secret_reveal", &["variable_id"]),
     ("preferences_load", &[]),
     ("preferences_save", &["values"]),

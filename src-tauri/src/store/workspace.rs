@@ -5,7 +5,7 @@
 //! v1 → v2 migration) stays in TypeScript.
 
 use crate::ipc::{ErrorCode, IpcError};
-use crate::secrets::{annotate_secrets, extract_secrets, is_secret_variable, SecretVault};
+use crate::secrets::{annotate_secrets, extract_secrets, is_secret_variable, sendable_secret, SecretVault};
 use crate::store::json::{js_key_order, to_js_pretty};
 use serde_json::Value;
 use std::fs;
@@ -22,6 +22,7 @@ const INVALID: &str = "The workspace data is invalid and was not saved.";
 const STALE: &str = "The workspace changed since it was loaded. Reload and try again.";
 const TOO_LARGE: &str = "The workspace is too large to save.";
 const SAVE_FAILED: &str = "The workspace could not be saved.";
+const SECRET_NOT_SENDABLE: &str = "A secret of the request is not an enabled variable of this project.";
 
 /// Mirrors `isWorkspace` in `src/workspace/repository.ts`.
 pub fn is_workspace(value: &Value) -> bool {
@@ -106,6 +107,24 @@ impl WorkspaceStore {
         let Some(vault) = &self.secrets else { return Ok(None) };
         let Some(mut workspace) = self.load()? else { return Ok(None) };
         if is_secret_variable(&mut workspace, variable_id) { vault.get(variable_id) } else { Ok(None) }
+    }
+
+    /// The values `request_send` substitutes, one per id with its variable key:
+    /// every id must be an enabled secret of the active environment or the
+    /// globals of `project_id` in the stored workspace. `None` when the value
+    /// does not open.
+    pub fn send_secrets(&self, project_id: &str, ids: &[String]) -> Result<Vec<(String, Option<String>)>, IpcError> {
+        let not_sendable = || IpcError::new(ErrorCode::Invalid, SECRET_NOT_SENDABLE);
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let (Some(vault), Some(workspace)) = (&self.secrets, self.load()?) else { return Err(not_sendable()) };
+        ids.iter()
+            .map(|id| {
+                let key = sendable_secret(&workspace, project_id, id).ok_or_else(not_sendable)?;
+                Ok((key, vault.get(id).ok().flatten()))
+            })
+            .collect()
     }
 
     /// Writes `incoming` with the next revision and returns what was written.
@@ -360,6 +379,45 @@ mod tests {
         // A vault entry without a secret variable behind it stays hidden.
         vault.set("v_plain", "leak").unwrap();
         assert_eq!(store.reveal("v_plain").unwrap(), None);
+    }
+
+    #[test]
+    fn sends_only_enabled_secrets_of_the_active_environment_or_globals_of_the_project() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::new());
+        let ids = |list: &[&str]| list.iter().map(|id| id.to_string()).collect::<Vec<_>>();
+        assert!(store.send_secrets("project-1", &[]).unwrap().is_empty());
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap_err().code, ErrorCode::Invalid, "no workspace yet");
+        let mut workspace = with_variables(demo(), json!([
+            { "id": "v_token", "key": " token ", "value": SECRET, "secret": true, "enabled": true },
+            { "id": "v_off", "key": "off", "value": "x", "secret": true, "enabled": false },
+            { "id": "v_plain", "key": "plain", "value": "visible", "secret": false, "enabled": true }
+        ]));
+        workspace["projects"][0]["globals"] = json!([{ "id": "g_key", "key": "key", "value": "global", "secret": true, "enabled": true }]);
+        let other = json!({ "id": "project-2", "name": "Other", "folders": [], "endpoints": [], "resources": [], "importSources": [],
+            "activeEnvironmentId": "env-9", "environments": [{ "id": "env-9", "name": "Prod", "variables": [{ "id": "v_foreign", "key": "t", "value": "foreign", "secret": true, "enabled": true }] }] });
+        workspace["projects"].as_array_mut().unwrap().push(other);
+        let saved = store.save(workspace).unwrap();
+
+        // Without an active environment only the globals are sendable.
+        assert_eq!(store.send_secrets("project-1", &ids(&["g_key"])).unwrap(), vec![("key".to_owned(), Some("global".to_owned()))]);
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap_err().code, ErrorCode::Invalid);
+
+        let mut active = saved;
+        active["projects"][0]["activeEnvironmentId"] = json!("env-1");
+        store.save(active).unwrap();
+        assert_eq!(
+            store.send_secrets("project-1", &ids(&["v_token", "g_key"])).unwrap(),
+            vec![("token".to_owned(), Some(SECRET.to_owned())), ("key".to_owned(), Some("global".to_owned()))]
+        );
+        for refused in ["v_off", "v_plain", "v_foreign", "unknown"] {
+            assert_eq!(store.send_secrets("project-1", &ids(&[refused])).unwrap_err().code, ErrorCode::Invalid, "{refused}");
+        }
+        assert_eq!(store.send_secrets("project-2", &ids(&["v_foreign"])).unwrap(), vec![("t".to_owned(), Some("foreign".to_owned()))]);
+
+        // A value that is gone from the vault is reported, not refused.
+        vault.retain_only(&HashSet::from(["g_key".to_owned(), "v_foreign".to_owned()])).unwrap();
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap(), vec![("token".to_owned(), None)]);
     }
 
     #[test]

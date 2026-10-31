@@ -37,8 +37,10 @@ export interface ReqoraApi {
     cancel?(): Promise<void>
   }
   request: {
-    /** Resolves variables (including decrypted secrets) and sends from the main process. */
+    /** Resolves variables and sends from the backend; secret values never reach the renderer under Tauri. */
     send(input: RunInput): Promise<RunResult>
+    /** Aborts the sends in flight, if any. */
+    cancel?(): Promise<void>
   }
   secrets: {
     /** Decrypts one stored secret for display after an explicit user action. */
@@ -59,6 +61,7 @@ export const IPC = {
   importUrl: 'reqora:import:url',
   importCancel: 'reqora:import:cancel',
   requestSend: 'reqora:request:send',
+  requestCancel: 'reqora:request:cancel',
   secretReveal: 'reqora:secret:reveal',
   preferencesLoad: 'reqora:preferences:load',
   preferencesSave: 'reqora:preferences:save'
@@ -76,6 +79,7 @@ export const COMMANDS = {
   importUrl: 'import_url',
   importCancel: 'import_cancel',
   requestSend: 'request_send',
+  requestCancel: 'request_cancel',
   secretReveal: 'secret_reveal',
   preferencesLoad: 'preferences_load',
   preferencesSave: 'preferences_save'
