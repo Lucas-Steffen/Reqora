@@ -55,7 +55,7 @@ pub async fn serve(respond: impl Fn(Received) -> Vec<u8> + Send + Sync + 'static
     format!("http://{address}")
 }
 
-async fn read_request(socket: &mut tokio::net::TcpStream) -> Option<Received> {
+pub async fn read_request(socket: &mut tokio::net::TcpStream) -> Option<Received> {
     let mut buffer = Vec::new();
     let mut chunk = [0u8; 8192];
     let head_end = loop {

@@ -34,6 +34,7 @@ pub const COMMANDS: &[(&str, &[&str])] = &[
     ("import_pick", &[]),
     ("import_path", &["path"]),
     ("import_url", &["url"]),
+    ("import_read_ref", &["session", "uri"]),
     ("import_cancel", &[]),
     ("request_send", &["input"]),
     ("request_cancel", &[]),

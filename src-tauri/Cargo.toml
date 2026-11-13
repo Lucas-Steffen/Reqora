@@ -26,6 +26,9 @@ reqwest = { version = "0.13", default-features = false, features = ["native-tls"
 native-tls = "0.2"
 tokio = { version = "1", features = ["rt", "macros", "time", "sync"] }
 futures-util = { version = "0.3", default-features = false }
+# Import (import::*): canonical paths without the Windows verbatim prefix, and the native file dialog.
+dunce = "1"
+tauri-plugin-dialog = "2"
 
 # DPAPI, only to open the secrets of the Electron profile (migrate::secrets).
 [target.'cfg(windows)'.dependencies]

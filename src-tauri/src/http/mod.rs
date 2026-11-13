@@ -222,7 +222,7 @@ fn response_headers(headers: &HeaderMap) -> Vec<(String, String)> {
 }
 
 /// `url.host` in JS: the host plus a non-default port.
-fn host(url: &Url) -> String {
+pub(crate) fn host(url: &Url) -> String {
     let host = url.host_str().unwrap_or_default();
     match url.port() {
         Some(port) => format!("{host}:{port}"),
@@ -237,7 +237,7 @@ fn network(url: &Url, code: Option<&str>) -> SendError {
 
 /// Every error in the cause chain. `io::Error::source` skips the error it
 /// wraps, so that one is visited explicitly.
-fn causes<'a>(error: &'a (dyn Error + 'static)) -> Vec<&'a (dyn Error + 'static)> {
+pub(crate) fn causes<'a>(error: &'a (dyn Error + 'static)) -> Vec<&'a (dyn Error + 'static)> {
     let mut chain = Vec::new();
     let mut next = Some(error);
     while let Some(current) = next {
@@ -254,7 +254,7 @@ fn causes<'a>(error: &'a (dyn Error + 'static)) -> Vec<&'a (dyn Error + 'static)
 }
 
 /// The class and the Node-style code of one error of the chain.
-fn system_code(error: &(dyn Error + 'static)) -> Option<(SendErrorCode, &'static str)> {
+pub(crate) fn system_code(error: &(dyn Error + 'static)) -> Option<(SendErrorCode, &'static str)> {
     if error.downcast_ref::<native_tls::Error>().is_some() {
         return Some((SendErrorCode::Tls, "ERR_TLS_HANDSHAKE"));
     }

@@ -6,6 +6,7 @@
     "importPick": { "name": "import_pick", "args": [] },
     "importPath": { "name": "import_path", "args": [{ "js": "path", "rust": "path" }] },
     "importUrl": { "name": "import_url", "args": [{ "js": "url", "rust": "url" }] },
+    "importReadRef": { "name": "import_read_ref", "args": [{ "js": "session", "rust": "session" }, { "js": "uri", "rust": "uri" }] },
     "importCancel": { "name": "import_cancel", "args": [] },
     "requestSend": { "name": "request_send", "args": [{ "js": "input", "rust": "input" }] },
     "requestCancel": { "name": "request_cancel", "args": [] },

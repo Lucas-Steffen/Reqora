@@ -16,7 +16,7 @@ Estados: `TODO`, `IN_PROGRESS`, `BLOCKED`, `REVIEW`, `DONE`. Uma TASK só fica `
 | [TASK-010](tasks/TASK-010.md) | C | Cofre de segredos | Alta | TASK-009 | DONE |
 | [TASK-011](tasks/TASK-011.md) | C | Migração de segredos do Electron (DPAPI) | Alta | TASK-010 | DONE |
 | [TASK-012](tasks/TASK-012.md) | C | Envio HTTP com reqwest | Alta | TASK-010 | DONE |
-| [TASK-013](tasks/TASK-013.md) | C | Import em Rust + Web Worker | Alta | TASK-008 | TODO |
+| [TASK-013](tasks/TASK-013.md) | C | Import em Rust + Web Worker | Alta | TASK-008 | IN_PROGRESS |
 | [TASK-014](tasks/TASK-014.md) | C | Segurança da janela | Alta | TASK-008 | TODO |
 | [TASK-015](tasks/TASK-015.md) | C | Smoke Tauri via CDP | Alta | TASK-009 a TASK-014 | TODO |
 | [TASK-016](tasks/TASK-016.md) | C | Instalador NSIS | Média | TASK-015 | TODO |
