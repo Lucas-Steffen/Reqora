@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createMemoryWorkspaceRepository, StaleRevisionError, type WorkspaceRepository } from '../../workspace/repository'
+import { createMemoryWorkspaceRepository, isWorkspace, normalizeWorkspace, StaleRevisionError, type WorkspaceRepository } from '../../workspace/repository'
 import type { Workspace } from '../../workspace/types'
 import type { ReqoraApi } from '../../shared/api'
+import { desktopApi } from './platform'
 
 /** Adapts the preload API to the replaceable repository interface. */
-export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepository {
+export function createIpcWorkspaceRepository(api: Pick<ReqoraApi, 'workspace'>): WorkspaceRepository {
   return {
     load: () => api.workspace.load(),
     async save(workspace) {
@@ -16,10 +17,30 @@ export function createIpcWorkspaceRepository(api: ReqoraApi): WorkspaceRepositor
   }
 }
 
+/**
+ * In-memory repository whose initial workspace is fetched from `url` on first
+ * load. Only bench builds use it (VITE_REQORA_BENCH_WORKSPACE), so the Tauri
+ * prototype can open the same fixture the Electron baseline opens.
+ */
+export function createFetchedWorkspaceRepository(url: string, fetcher: typeof fetch = fetch): WorkspaceRepository {
+  let inner: Promise<WorkspaceRepository> | undefined
+  const ready = () => inner ??= fetcher(url).then(async response => {
+    if (!response.ok) throw new Error(`Bench workspace request failed with ${response.status}`)
+    const value: unknown = await response.json()
+    if (!isWorkspace(value)) throw new Error('Bench workspace is not a workspace')
+    return createMemoryWorkspaceRepository(normalizeWorkspace(value))
+  })
+  return {
+    load: async () => (await ready()).load(),
+    save: async workspace => (await ready()).save(workspace)
+  }
+}
+
 export function defaultWorkspaceRepository(): WorkspaceRepository {
-  return typeof window !== 'undefined' && window.reqora
-    ? createIpcWorkspaceRepository(window.reqora)
-    : createMemoryWorkspaceRepository()
+  const api = desktopApi()
+  if (api?.workspace) return createIpcWorkspaceRepository({ workspace: api.workspace })
+  const bench = import.meta.env.VITE_REQORA_BENCH_WORKSPACE
+  return bench ? createFetchedWorkspaceRepository(bench) : createMemoryWorkspaceRepository()
 }
 
 export interface WorkspaceState {

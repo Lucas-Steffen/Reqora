@@ -6,3 +6,4 @@ coverage/
 .DS_Store
 docs/apidog-search/evidence/raw/
 docs/apidog-search/evidence/extracted/
+.bench/

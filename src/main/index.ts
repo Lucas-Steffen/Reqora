@@ -5,6 +5,7 @@ import { createImportService } from "./importService";
 import { registerIpc } from "./ipc";
 import { createFileWorkspaceStore } from "./workspaceStore";
 import { createSecretStore } from "./secretStore";
+import { createPreferencesStore } from "./preferencesStore";
 import { annotateSecrets, extractSecrets } from "./secretVariables";
 import { SEND_LIMITS, sendHttp } from "./http/sendRequest";
 import { runRequest } from "../runner/run";
@@ -66,6 +67,8 @@ void app.whenReady().then(() => {
       [...project.globals, ...project.environments.flatMap((environment) => environment.variables)]
         .some((variable) => variable.id === variableId && variable.secret),
     );
+  // Every send in flight, so a cancel aborts them all (as request_cancel does in Tauri).
+  const inFlight = new Set<AbortController>();
   registerIpc({
     store,
     importer: createImportService(),
@@ -74,10 +77,22 @@ void app.whenReady().then(() => {
       runRequest(input, {
         workspace: await store.load(),
         readSecret: (variable) => secrets.get(variable.id),
-        send: (request) => sendHttp(request, SEND_LIMITS),
+        send: async (request) => {
+          const controller = new AbortController();
+          inFlight.add(controller);
+          try {
+            return await sendHttp(request, { ...SEND_LIMITS, signal: controller.signal });
+          } finally {
+            inFlight.delete(controller);
+          }
+        },
       }),
+    cancelRequests: () => {
+      for (const controller of inFlight) controller.abort();
+    },
     revealSecret: async (variableId) =>
       (await isSecretVariable(variableId)) ? ((await secrets.get(variableId)) ?? null) : null,
+    preferences: createPreferencesStore(userData),
   });
   createWindow();
   app.on("activate", () => {

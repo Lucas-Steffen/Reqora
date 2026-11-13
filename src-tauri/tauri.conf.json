@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Reqora",
+  "version": "0.1.0",
+  "identifier": "com.reqora.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev:renderer",
+    "devUrl": "http://127.0.0.1:5173",
+    "beforeBuildCommand": "pnpm build:tauri-renderer",
+    "frontendDist": "../out/tauri-renderer"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Reqora",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "backgroundColor": "#101116"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost",
+      "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:* ws://localhost:*"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico", "icons/icon.png"]
+  }
+}

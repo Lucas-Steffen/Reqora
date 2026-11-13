@@ -1,0 +1,566 @@
+//! The workspace file, as `src/main/workspaceStore.ts` keeps it: one JSON file
+//! replaced atomically, revisions that reject stale saves, a one-time backup of
+//! an older format and `.corrupt-<ms>` for unreadable files. The workspace is
+//! opaque JSON here: only the envelope is checked, and the schema (with the
+//! v1 → v2 migration) stays in TypeScript.
+
+use crate::ipc::{ErrorCode, IpcError};
+use crate::secrets::{annotate_secrets, extract_secrets, is_secret_variable, sendable_secret, SecretVault};
+use crate::store::json::{js_key_order, to_js_pretty};
+use serde_json::Value;
+use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+pub const MAX_WORKSPACE_BYTES: usize = 64 * 1024 * 1024;
+pub const WORKSPACE_VERSION: u64 = 2;
+
+const READ_FAILED: &str = "The workspace file could not be read. Close other programs using it and restart Reqora.";
+const INVALID: &str = "The workspace data is invalid and was not saved.";
+const STALE: &str = "The workspace changed since it was loaded. Reload and try again.";
+const TOO_LARGE: &str = "The workspace is too large to save.";
+const SAVE_FAILED: &str = "The workspace could not be saved.";
+const SECRET_NOT_SENDABLE: &str = "A secret of the request is not an enabled variable of this project.";
+
+/// Mirrors `isWorkspace` in `src/workspace/repository.ts`.
+pub fn is_workspace(value: &Value) -> bool {
+    let version = value.get("version").and_then(Value::as_f64);
+    let projects = value.get("projects").and_then(Value::as_array);
+    matches!(version, Some(v) if v == 1.0 || v == WORKSPACE_VERSION as f64)
+        && value.get("revision").is_some_and(Value::is_number)
+        && value.get("activeProjectId").is_some_and(Value::is_string)
+        && projects.is_some_and(|projects| {
+            !projects.is_empty()
+                && projects.iter().all(|project| {
+                    ["id", "name"].iter().all(|key| project.get(key).is_some_and(Value::is_string))
+                        && ["folders", "endpoints", "resources", "importSources"].iter().all(|key| project.get(key).is_some_and(Value::is_array))
+                })
+        })
+}
+
+pub(crate) fn now_ms() -> u128 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|elapsed| elapsed.as_millis()).unwrap_or(0)
+}
+
+fn io_error(message: &str) -> IpcError {
+    IpcError::new(ErrorCode::Io, message)
+}
+
+#[derive(Default)]
+struct State {
+    /// Revision of the file on disk; `None` until it was read.
+    revision: Option<f64>,
+    /// Original text of an older-format file, written once before the first save.
+    pending_backup: Option<(String, String)>,
+    /// Set when the store could not be prepared (e.g. the legacy import failed).
+    failed: Option<String>,
+}
+
+/// File store in the app data directory. Saves hold the lock for the whole
+/// operation, so revisions stay monotonic.
+pub struct WorkspaceStore {
+    dir: PathBuf,
+    state: Mutex<State>,
+    /// Where secret values go; without it variables are stored as given.
+    secrets: Option<Arc<SecretVault>>,
+}
+
+impl WorkspaceStore {
+    pub fn new(dir: impl Into<PathBuf>) -> Self {
+        Self { dir: dir.into(), state: Mutex::new(State::default()), secrets: None }
+    }
+
+    /// Moves secret values into `vault` on save and flags them on load.
+    pub fn with_secrets(mut self, vault: Arc<SecretVault>) -> Self {
+        self.secrets = Some(vault);
+        self
+    }
+
+    /// A store whose every call fails with `message`, so the renderer never
+    /// seeds the demo over data it could not reach.
+    pub fn failed(dir: impl Into<PathBuf>, message: impl Into<String>) -> Self {
+        let store = Self::new(dir);
+        store.state.lock().expect("store lock").failed = Some(message.into());
+        store
+    }
+
+    pub fn file(&self) -> PathBuf {
+        self.dir.join("workspace.json")
+    }
+
+    /// The workspace on disk, or `None` on first run (or after a corrupt file
+    /// was set aside), in which case the renderer seeds the demo.
+    pub fn load(&self) -> Result<Option<Value>, IpcError> {
+        let mut state = self.state.lock().map_err(|_| io_error(READ_FAILED))?;
+        let mut workspace = self.read(&mut state)?;
+        if let (Some(workspace), Some(vault)) = (workspace.as_mut(), &self.secrets) {
+            annotate_secrets(workspace, &vault.ids()?);
+        }
+        Ok(workspace)
+    }
+
+    /// The value of a secret variable of the stored workspace; `None` for
+    /// unknown or non-secret ids.
+    pub fn reveal(&self, variable_id: &str) -> Result<Option<String>, IpcError> {
+        let Some(vault) = &self.secrets else { return Ok(None) };
+        let Some(mut workspace) = self.load()? else { return Ok(None) };
+        if is_secret_variable(&mut workspace, variable_id) { vault.get(variable_id) } else { Ok(None) }
+    }
+
+    /// The values `request_send` substitutes, one per id with its variable key:
+    /// every id must be an enabled secret of the active environment or the
+    /// globals of `project_id` in the stored workspace. `None` when the value
+    /// does not open.
+    pub fn send_secrets(&self, project_id: &str, ids: &[String]) -> Result<Vec<(String, Option<String>)>, IpcError> {
+        let not_sendable = || IpcError::new(ErrorCode::Invalid, SECRET_NOT_SENDABLE);
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let (Some(vault), Some(workspace)) = (&self.secrets, self.load()?) else { return Err(not_sendable()) };
+        ids.iter()
+            .map(|id| {
+                let key = sendable_secret(&workspace, project_id, id).ok_or_else(not_sendable)?;
+                Ok((key, vault.get(id).ok().flatten()))
+            })
+            .collect()
+    }
+
+    /// Writes `incoming` with the next revision and returns what was written.
+    pub fn save(&self, incoming: Value) -> Result<Value, IpcError> {
+        let mut state = self.state.lock().map_err(|_| io_error(SAVE_FAILED))?;
+        let current = match state.revision {
+            Some(revision) if state.failed.is_none() => revision,
+            _ => {
+                self.read(&mut state)?;
+                state.revision.unwrap_or(0.0)
+            }
+        };
+        if !is_workspace(&incoming) {
+            return Err(IpcError::new(ErrorCode::Invalid, INVALID));
+        }
+        if incoming["revision"].as_f64() != Some(current) {
+            return Err(IpcError::new(ErrorCode::Stale, STALE));
+        }
+        let mut next = incoming;
+        let revision = current + 1.0;
+        next["revision"] = if revision.fract() == 0.0 && revision.abs() < 9007199254740992.0 {
+            Value::from(revision as i64)
+        } else {
+            Value::from(revision)
+        };
+        js_key_order(&mut next);
+        // Before anything is written: if the vault fails, nothing changes.
+        if let Some(vault) = &self.secrets {
+            extract_secrets(&mut next, vault)?;
+        }
+        if let Some((version, text)) = &state.pending_backup {
+            // Never overwrite an existing backup; failing to back up blocks the save.
+            match write_new(&self.dir.join(format!("workspace.v{version}.backup.json")), text.as_bytes()) {
+                Ok(()) => {}
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+                Err(_) => return Err(io_error(SAVE_FAILED)),
+            }
+            state.pending_backup = None;
+        }
+        self.persist(&next)?;
+        state.revision = Some(revision);
+        Ok(next)
+    }
+
+    fn read(&self, state: &mut State) -> Result<Option<Value>, IpcError> {
+        if let Some(message) = &state.failed {
+            return Err(io_error(message));
+        }
+        let file = self.file();
+        let bytes = match fs::read(&file) {
+            Ok(bytes) => bytes,
+            // Only a missing file means "first run". Any other error (locks,
+            // permissions) must not lead to the demo being saved over the data.
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                state.revision = Some(0.0);
+                return Ok(None);
+            }
+            Err(_) => return Err(io_error(READ_FAILED)),
+        };
+        // `readFile(file, 'utf8')` replaces invalid sequences the same way.
+        let text = String::from_utf8_lossy(&bytes).into_owned();
+        let text_without_bom = text.strip_prefix('\u{feff}').unwrap_or(&text);
+        let parsed = serde_json::from_str::<Value>(text_without_bom).ok().filter(is_workspace);
+        let Some(mut workspace) = parsed else {
+            // Keep the unreadable file for recovery instead of overwriting it on the next save.
+            let _ = fs::rename(&file, corrupt_path(&file));
+            state.revision = Some(0.0);
+            return Ok(None);
+        };
+        let version = workspace["version"].as_f64().unwrap_or_default();
+        if version != WORKSPACE_VERSION as f64 {
+            state.pending_backup = Some((crate::store::json::js_number(version), text));
+        }
+        js_key_order(&mut workspace);
+        state.revision = workspace["revision"].as_f64();
+        Ok(Some(workspace))
+    }
+
+    fn persist(&self, workspace: &Value) -> Result<(), IpcError> {
+        let text = to_js_pretty(workspace).map_err(|_| io_error(SAVE_FAILED))?;
+        if text.len() > MAX_WORKSPACE_BYTES {
+            return Err(io_error(TOO_LARGE));
+        }
+        fs::create_dir_all(&self.dir).map_err(|_| io_error(SAVE_FAILED))?;
+        let file = self.file();
+        let temporary = self.dir.join(format!("workspace.json.{}.{}.tmp", std::process::id(), now_ms()));
+        let written = write_new(&temporary, &text).and_then(|()| fs::rename(&temporary, &file));
+        if written.is_err() {
+            let _ = fs::remove_file(&temporary);
+            return Err(io_error(SAVE_FAILED));
+        }
+        Ok(())
+    }
+}
+
+fn corrupt_path(file: &Path) -> PathBuf {
+    let mut name = file.as_os_str().to_owned();
+    name.push(format!(".corrupt-{}", now_ms()));
+    PathBuf::from(name)
+}
+
+/// Creates `path` (failing if it exists) with owner-only access where the OS has modes.
+pub(crate) fn write_new(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options.open(path)?;
+    file.write_all(bytes)?;
+    file.sync_all()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::secrets::MemoryKeyProvider;
+    use std::collections::HashSet;
+    use serde_json::json;
+
+    fn demo() -> Value {
+        json!({
+            "version": 2,
+            "revision": 0,
+            "activeProjectId": "project-1",
+            "projects": [{ "id": "project-1", "name": "Demo", "folders": [], "endpoints": [], "resources": [], "importSources": [] }]
+        })
+    }
+
+    fn with_revision(mut workspace: Value, revision: u64) -> Value {
+        workspace["revision"] = json!(revision);
+        workspace
+    }
+
+    fn secret_store(dir: &Path, keys: MemoryKeyProvider) -> (Arc<SecretVault>, WorkspaceStore) {
+        let vault = Arc::new(SecretVault::new(dir, Box::new(keys)));
+        (vault.clone(), WorkspaceStore::new(dir).with_secrets(vault))
+    }
+
+    fn with_variables(mut workspace: Value, variables: Value) -> Value {
+        workspace["projects"][0]["environments"] = json!([{ "id": "env-1", "name": "Dev", "variables": variables }]);
+        workspace
+    }
+
+    fn disk_text(dir: &Path) -> String {
+        fs::read_dir(dir).unwrap().map(|entry| fs::read_to_string(entry.unwrap().path()).unwrap_or_default()).collect()
+    }
+
+    const SECRET: &str = "s3cr3t-value";
+
+    #[test]
+    fn never_writes_secret_values_in_plain_text_and_annotates_them_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let keys = MemoryKeyProvider::new();
+        let (vault, store) = secret_store(dir.path(), keys.clone());
+        let saved = store
+            .save(with_variables(demo(), json!([
+                { "id": "v_token", "key": "token", "value": SECRET, "secret": true, "enabled": true },
+                { "id": "v_plain", "key": "plain", "value": "visible", "secret": false, "enabled": true }
+            ])))
+            .unwrap();
+        let variables = &saved["projects"][0]["environments"][0]["variables"];
+        assert_eq!(variables[0], json!({ "id": "v_token", "key": "token", "value": "", "secret": true, "enabled": true, "hasStoredSecret": true }));
+        assert_eq!(variables[1]["value"], json!("visible"));
+        assert!(!disk_text(dir.path()).contains(SECRET));
+        assert_eq!(vault.get("v_token").unwrap().as_deref(), Some(SECRET));
+
+        // A fresh process sees the flag but not the value.
+        let (_, reopened) = secret_store(dir.path(), keys);
+        let variable = &reopened.load().unwrap().unwrap()["projects"][0]["environments"][0]["variables"][0];
+        assert_eq!((&variable["value"], &variable["hasStoredSecret"]), (&json!(""), &json!(true)));
+        assert_eq!(reopened.reveal("v_token").unwrap().as_deref(), Some(SECRET));
+    }
+
+    #[test]
+    fn keeps_blank_secrets_copies_on_duplicate_and_drops_orphans_and_unsecreted_values() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::new());
+        let first = store.save(with_variables(demo(), json!([{ "id": "a", "key": "k", "value": SECRET, "secret": true, "enabled": true }]))).unwrap();
+        let second = store
+            .save(with_variables(first, json!([
+                { "id": "a", "key": "k", "value": "", "secret": true, "enabled": true },
+                { "id": "b", "key": "k", "value": "", "secret": true, "enabled": true, "copySecretFrom": "a" }
+            ])))
+            .unwrap();
+        assert_eq!(vault.get("a").unwrap().as_deref(), Some(SECRET));
+        assert_eq!(vault.get("b").unwrap().as_deref(), Some(SECRET));
+        let third = store.save(with_variables(second, json!([{ "id": "b", "key": "k", "value": "", "secret": false, "enabled": true, "copySecretFrom": "a" }]))).unwrap();
+        assert!(vault.ids().unwrap().is_empty());
+        assert_eq!(third["projects"][0]["environments"][0]["variables"][0], json!({ "id": "b", "key": "k", "value": "", "secret": false, "enabled": true }));
+    }
+
+    #[test]
+    fn refuses_to_store_secrets_when_the_keychain_is_unavailable() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::unavailable());
+        assert_eq!(vault.set("x", SECRET).unwrap_err(), IpcError::new(ErrorCode::Io, crate::secrets::SECRET_UNAVAILABLE));
+        let error = store.save(with_variables(demo(), json!([{ "id": "a", "key": "k", "value": SECRET, "secret": true, "enabled": true }]))).unwrap_err();
+        assert_eq!(error, IpcError::new(ErrorCode::Io, crate::secrets::SECRET_UNAVAILABLE));
+        assert!(fs::read_dir(dir.path()).unwrap().next().is_none(), "nothing is written");
+        // Variables that are not secret still save.
+        store.save(with_variables(demo(), json!([{ "id": "a", "key": "k", "value": "plain", "secret": false, "enabled": true }]))).unwrap();
+    }
+
+    #[test]
+    fn isolates_secrets_between_a_project_and_its_duplicate() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::new());
+        let first = store.save(with_variables(demo(), json!([{ "id": "v_token", "key": "token", "value": "tok-A", "secret": true, "enabled": true }]))).unwrap();
+        // What duplicateProject produces: new ids, blank values pointing at the originals.
+        let mut copy = first["projects"][0].clone();
+        copy["id"] = json!("project-2");
+        copy["environments"][0]["id"] = json!("env-2");
+        copy["environments"][0]["variables"][0] = json!({ "id": "v_copy", "key": "token", "value": "", "secret": true, "enabled": true, "copySecretFrom": "v_token" });
+        let mut with_copy = first;
+        with_copy["projects"].as_array_mut().unwrap().push(copy);
+        let saved = store.save(with_copy).unwrap();
+        assert_eq!(saved["projects"][1]["environments"][0]["variables"][0]["hasStoredSecret"], json!(true));
+        assert_eq!(store.reveal("v_copy").unwrap().as_deref(), Some("tok-A"));
+
+        // Changing the copy does not affect the original.
+        let mut edited = saved;
+        edited["projects"][1]["environments"][0]["variables"][0]["value"] = json!("tok-B");
+        let after_edit = store.save(edited).unwrap();
+        assert_eq!(vault.get("v_token").unwrap().as_deref(), Some("tok-A"));
+        assert_eq!(vault.get("v_copy").unwrap().as_deref(), Some("tok-B"));
+
+        let mut deleted = after_edit;
+        deleted["projects"].as_array_mut().unwrap().pop();
+        store.save(deleted).unwrap();
+        assert_eq!(vault.ids().unwrap(), HashSet::from(["v_token".to_owned()]));
+        let text = fs::read_to_string(dir.path().join("workspace.json")).unwrap();
+        assert!(!text.contains("tok-A") && !text.contains("tok-B"));
+    }
+
+    #[test]
+    fn reveals_only_secret_variables_of_the_stored_workspace() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::new());
+        assert_eq!(store.reveal("v_token").unwrap(), None, "no workspace yet");
+        let mut workspace = with_variables(demo(), json!([
+            { "id": "v_token", "key": "token", "value": SECRET, "secret": true, "enabled": true },
+            { "id": "v_plain", "key": "plain", "value": "visible", "secret": false, "enabled": true }
+        ]));
+        workspace["projects"][0]["globals"] = json!([{ "id": "g_key", "key": "key", "value": "global", "secret": true, "enabled": true }]);
+        store.save(workspace).unwrap();
+        assert_eq!(store.reveal("g_key").unwrap().as_deref(), Some("global"));
+        assert_eq!(store.reveal("v_plain").unwrap(), None);
+        assert_eq!(store.reveal("unknown").unwrap(), None);
+        // A vault entry without a secret variable behind it stays hidden.
+        vault.set("v_plain", "leak").unwrap();
+        assert_eq!(store.reveal("v_plain").unwrap(), None);
+    }
+
+    #[test]
+    fn sends_only_enabled_secrets_of_the_active_environment_or_globals_of_the_project() {
+        let dir = tempfile::tempdir().unwrap();
+        let (vault, store) = secret_store(dir.path(), MemoryKeyProvider::new());
+        let ids = |list: &[&str]| list.iter().map(|id| id.to_string()).collect::<Vec<_>>();
+        assert!(store.send_secrets("project-1", &[]).unwrap().is_empty());
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap_err().code, ErrorCode::Invalid, "no workspace yet");
+        let mut workspace = with_variables(demo(), json!([
+            { "id": "v_token", "key": " token ", "value": SECRET, "secret": true, "enabled": true },
+            { "id": "v_off", "key": "off", "value": "x", "secret": true, "enabled": false },
+            { "id": "v_plain", "key": "plain", "value": "visible", "secret": false, "enabled": true }
+        ]));
+        workspace["projects"][0]["globals"] = json!([{ "id": "g_key", "key": "key", "value": "global", "secret": true, "enabled": true }]);
+        let other = json!({ "id": "project-2", "name": "Other", "folders": [], "endpoints": [], "resources": [], "importSources": [],
+            "activeEnvironmentId": "env-9", "environments": [{ "id": "env-9", "name": "Prod", "variables": [{ "id": "v_foreign", "key": "t", "value": "foreign", "secret": true, "enabled": true }] }] });
+        workspace["projects"].as_array_mut().unwrap().push(other);
+        let saved = store.save(workspace).unwrap();
+
+        // Without an active environment only the globals are sendable.
+        assert_eq!(store.send_secrets("project-1", &ids(&["g_key"])).unwrap(), vec![("key".to_owned(), Some("global".to_owned()))]);
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap_err().code, ErrorCode::Invalid);
+
+        let mut active = saved;
+        active["projects"][0]["activeEnvironmentId"] = json!("env-1");
+        store.save(active).unwrap();
+        assert_eq!(
+            store.send_secrets("project-1", &ids(&["v_token", "g_key"])).unwrap(),
+            vec![("token".to_owned(), Some(SECRET.to_owned())), ("key".to_owned(), Some("global".to_owned()))]
+        );
+        for refused in ["v_off", "v_plain", "v_foreign", "unknown"] {
+            assert_eq!(store.send_secrets("project-1", &ids(&[refused])).unwrap_err().code, ErrorCode::Invalid, "{refused}");
+        }
+        assert_eq!(store.send_secrets("project-2", &ids(&["v_foreign"])).unwrap(), vec![("t".to_owned(), Some("foreign".to_owned()))]);
+
+        // A value that is gone from the vault is reported, not refused.
+        vault.retain_only(&HashSet::from(["g_key".to_owned(), "v_foreign".to_owned()])).unwrap();
+        assert_eq!(store.send_secrets("project-1", &ids(&["v_token"])).unwrap(), vec![("token".to_owned(), None)]);
+    }
+
+    #[test]
+    fn saves_atomically_with_revisions_and_reloads_from_disk() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        assert_eq!(store.load().unwrap(), None);
+        let mut renamed = demo();
+        renamed["projects"][0]["name"] = json!("Renamed");
+        let saved = store.save(renamed).unwrap();
+        assert_eq!(saved["revision"], json!(1));
+        assert_eq!(store.save(demo()).unwrap_err().code, ErrorCode::Stale);
+        let invalid = store.save(json!({ "nope": true })).unwrap_err();
+        assert_eq!(invalid, IpcError::new(ErrorCode::Invalid, INVALID));
+        let reopened = WorkspaceStore::new(dir.path()).load().unwrap().unwrap();
+        assert_eq!(reopened["projects"][0]["name"], json!("Renamed"));
+        let on_disk: Value = serde_json::from_slice(&fs::read(dir.path().join("workspace.json")).unwrap()).unwrap();
+        assert_eq!(on_disk["revision"], json!(1));
+        let leftovers: Vec<_> = fs::read_dir(dir.path()).unwrap().map(|entry| entry.unwrap().file_name()).collect();
+        assert_eq!(leftovers, ["workspace.json"], "no temporary files remain");
+    }
+
+    #[test]
+    fn fails_to_load_instead_of_seeding_when_the_file_cannot_be_read() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir(dir.path().join("workspace.json")).unwrap(); // stands in for a locked file
+        let store = WorkspaceStore::new(dir.path());
+        let error = store.load().unwrap_err();
+        assert_eq!(error.code, ErrorCode::Io);
+        assert!(error.message.contains("could not be read"));
+        assert!(store.save(demo()).unwrap_err().message.contains("could not be read"));
+    }
+
+    #[test]
+    fn sets_a_corrupt_file_aside_and_falls_back_to_the_demo() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("workspace.json"), "{ broken").unwrap();
+        assert_eq!(WorkspaceStore::new(dir.path()).load().unwrap(), None);
+        let names: Vec<String> = fs::read_dir(dir.path()).unwrap().map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        assert_eq!(names.len(), 1);
+        assert!(names[0].starts_with("workspace.json.corrupt-"), "{names:?}");
+        assert_eq!(fs::read_to_string(dir.path().join(&names[0])).unwrap(), "{ broken");
+    }
+
+    #[test]
+    fn sets_a_non_workspace_file_aside() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("workspace.json"), r#"{"version":3,"revision":0}"#).unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        assert_eq!(store.load().unwrap(), None);
+        assert!(!dir.path().join("workspace.json").exists());
+        assert_eq!(store.save(demo()).unwrap()["revision"], json!(1));
+    }
+
+    #[test]
+    fn backs_up_an_older_format_once_on_the_first_save() {
+        let dir = tempfile::tempdir().unwrap();
+        let v1 = json!({
+            "version": 1,
+            "revision": 3,
+            "activeProjectId": "project-1",
+            "projects": [{ "id": "project-1", "name": "My existing API", "folders": [], "endpoints": [], "resources": [], "importSources": [] }]
+        });
+        let original = String::from_utf8(to_js_pretty(&v1).unwrap()).unwrap();
+        fs::write(dir.path().join("workspace.json"), &original).unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        assert_eq!(store.load().unwrap().unwrap(), v1, "loaded unchanged; the renderer migrates it");
+        // The renderer sends the migrated (v2) workspace back.
+        let mut migrated = v1.clone();
+        migrated["version"] = json!(2);
+        let saved = store.save(migrated).unwrap();
+        assert_eq!(saved["version"], json!(2));
+        assert_eq!(saved["revision"], json!(4));
+        let backup = dir.path().join("workspace.v1.backup.json");
+        assert_eq!(fs::read_to_string(&backup).unwrap(), original);
+        // A second save does not touch the backup, nor does a reopened store.
+        fs::write(&backup, "sentinel").unwrap();
+        store.save(with_revision(saved.clone(), 4)).unwrap();
+        assert_eq!(fs::read_to_string(&backup).unwrap(), "sentinel");
+        let on_disk: Value = serde_json::from_slice(&fs::read(dir.path().join("workspace.json")).unwrap()).unwrap();
+        assert_eq!((on_disk["version"].clone(), on_disk["revision"].clone()), (json!(2), json!(5)));
+    }
+
+    #[test]
+    fn keeps_an_existing_backup_when_the_old_file_is_loaded_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut v1 = demo();
+        v1["version"] = json!(1);
+        fs::write(dir.path().join("workspace.json"), to_js_pretty(&v1).unwrap()).unwrap();
+        fs::write(dir.path().join("workspace.v1.backup.json"), "earlier").unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        store.load().unwrap();
+        store.save(demo()).unwrap();
+        assert_eq!(fs::read_to_string(dir.path().join("workspace.v1.backup.json")).unwrap(), "earlier");
+    }
+
+    #[test]
+    fn refuses_workspaces_over_the_size_limit() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        let mut large = demo();
+        large["projects"][0]["notes"] = json!("x".repeat(MAX_WORKSPACE_BYTES));
+        assert_eq!(store.save(large).unwrap_err(), IpcError::new(ErrorCode::Io, TOO_LARGE));
+        assert!(!dir.path().join("workspace.json").exists());
+        assert_eq!(store.save(demo()).unwrap()["revision"], json!(1), "the revision is unchanged by a failed save");
+    }
+
+    #[test]
+    fn a_failed_store_never_reads_or_writes() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = WorkspaceStore::failed(dir.path(), "copy failed");
+        assert_eq!(store.load().unwrap_err(), IpcError::new(ErrorCode::Io, "copy failed"));
+        assert_eq!(store.save(demo()).unwrap_err(), IpcError::new(ErrorCode::Io, "copy failed"));
+        assert!(!dir.path().join("workspace.json").exists());
+    }
+
+    #[test]
+    fn checks_the_envelope_like_the_renderer() {
+        assert!(is_workspace(&demo()));
+        let mut empty = demo();
+        empty["projects"] = json!([]);
+        assert!(!is_workspace(&empty));
+        let mut missing = demo();
+        missing["projects"][0].as_object_mut().unwrap().remove("importSources");
+        assert!(!is_workspace(&missing));
+        let mut text_revision = demo();
+        text_revision["revision"] = json!("1");
+        assert!(!is_workspace(&text_revision));
+        let mut version = demo();
+        version["version"] = json!(1.0);
+        assert!(is_workspace(&version));
+    }
+
+    #[test]
+    fn writes_the_same_bytes_as_the_electron_store() {
+        // Generated by src/main/workspaceStore.fixture.test.ts from the same input.
+        let input = include_str!("../../../src/shared/contract/workspace-store/input.json");
+        let expected = include_bytes!("../../../src/shared/contract/workspace-store/expected.json");
+        let dir = tempfile::tempdir().unwrap();
+        let store = WorkspaceStore::new(dir.path());
+        assert_eq!(store.load().unwrap(), None);
+        store.save(serde_json::from_str(input).unwrap()).unwrap();
+        let written = fs::read(dir.path().join("workspace.json")).unwrap();
+        assert_eq!(String::from_utf8_lossy(&written), String::from_utf8_lossy(expected));
+    }
+}

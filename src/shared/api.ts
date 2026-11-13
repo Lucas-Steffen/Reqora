@@ -16,6 +16,12 @@ export type SaveOutcome =
   | { ok: true; workspace: Workspace }
   | { ok: false; code: 'STALE' | 'INVALID' | 'IO'; message: string }
 
+/** Persisted UI preferences; `initialized` is false until the first save. */
+export interface PreferencesSnapshot {
+  initialized: boolean
+  values: Record<string, unknown>
+}
+
 export interface ReqoraApi {
   workspace: {
     load(): Promise<Workspace>
@@ -31,12 +37,19 @@ export interface ReqoraApi {
     cancel?(): Promise<void>
   }
   request: {
-    /** Resolves variables (including decrypted secrets) and sends from the main process. */
+    /** Resolves variables and sends from the backend; secret values never reach the renderer under Tauri. */
     send(input: RunInput): Promise<RunResult>
+    /** Aborts the sends in flight, if any. */
+    cancel?(): Promise<void>
   }
   secrets: {
     /** Decrypts one stored secret for display after an explicit user action. */
     reveal(variableId: string): Promise<string | null>
+  }
+  /** Search options, scope and per-project history, stored next to the workspace. */
+  preferences?: {
+    load(): Promise<PreferencesSnapshot>
+    save(values: Record<string, unknown>): Promise<boolean>
   }
 }
 
@@ -48,8 +61,33 @@ export const IPC = {
   importUrl: 'reqora:import:url',
   importCancel: 'reqora:import:cancel',
   requestSend: 'reqora:request:send',
-  secretReveal: 'reqora:secret:reveal'
+  requestCancel: 'reqora:request:cancel',
+  secretReveal: 'reqora:secret:reveal',
+  preferencesLoad: 'reqora:preferences:load',
+  preferencesSave: 'reqora:preferences:save'
 } as const
+
+/**
+ * Tauri command names, one per IPC channel above. Rust registers the same
+ * names; `contract/ipc-commands.json` pins both sides (see TASK-008).
+ */
+export const COMMANDS = {
+  workspaceLoad: 'workspace_load',
+  workspaceSave: 'workspace_save',
+  importPick: 'import_pick',
+  importPath: 'import_path',
+  importUrl: 'import_url',
+  importCancel: 'import_cancel',
+  requestSend: 'request_send',
+  requestCancel: 'request_cancel',
+  secretReveal: 'secret_reveal',
+  preferencesLoad: 'preferences_load',
+  preferencesSave: 'preferences_save'
+} as const satisfies Record<keyof typeof IPC, string>
+
+/** Error codes a Tauri command may reject with, as `{ code, message }`. */
+export const BACKEND_ERROR_CODES = ['STALE', 'INVALID', 'IO'] as const
+export type BackendErrorCode = (typeof BACKEND_ERROR_CODES)[number]
 
 declare global {
   interface Window {
